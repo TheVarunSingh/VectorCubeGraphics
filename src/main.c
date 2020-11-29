@@ -9,7 +9,7 @@
 #include "spi.h"
 #include "vec_gen.h"
 
-#define LED_PIN GPIO_PA5
+#define LED_PIN GPIO_PA10 // actually port b
 
 #define DELAY_TIM       TIM3
 #define VEC_MASTER_CLK  TIM4
@@ -20,18 +20,18 @@
 #define Y_DMA_STREAM    DMA1_Stream2
 
 const unsigned int CUBE_VECTOR_DATA_SIZE = 38; // words
-uint16_t cubeVectorData1[19][2];
-uint16_t cubeVectorData2[19][2];
+#define ARRAY_SIZE 19
+uint16_t cubeVectorData1[ARRAY_SIZE][2];
+uint16_t cubeVectorData2[ARRAY_SIZE][2];
 
 volatile int newCommandAvailable = 0;
 volatile uint16_t lastCommand;
 volatile int currentData = 1;
 
 #define NEG (1 << 10)
-#define ARRAY_SIZE 6
-uint16_t array[ARRAY_SIZE][2] = {{512,0},{0,512},{NEG|512,NEG|512},{NEG|512,0},{0,NEG|512},{512,512}};
-uint16_t x_array[ARRAY_SIZE] = {512,0,NEG|512,NEG|512,0,512};
-uint16_t y_array[ARRAY_SIZE] = {0,512,NEG|512,0,NEG|512,512};
+//uint16_t array[ARRAY_SIZE][2] = {{512,0},{0,512},{NEG|512,NEG|512},{NEG|512,0},{0,NEG|512},{512,512}};
+//uint16_t x_array[ARRAY_SIZE] = {512,0,NEG|512,NEG|512,0,512};
+//uint16_t y_array[ARRAY_SIZE] = {0,512,NEG|512,0,NEG|512,512};
 uint8_t i = 0; // I have no actually no idea which vector it wants to draw first, but ah well this works.
 
 void USART2_IRQHandler() {
@@ -40,24 +40,6 @@ void USART2_IRQHandler() {
         lastCommand = message;
         newCommandAvailable = 1;
     }
-}
-
-void TIM5_IRQHandler() {
-    VEC_TIMER->SR &= ~(TIM_SR_UIF); // software has to clear this flag
-
-    // strobe shift register output latch
-    digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
-    digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
-    digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_LOW);
-    digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
-
-    // generate GO signal
-    generateDuration(VEC_TIMER, 1028, 5);
-
-    // and while we're drawing the current vector, let's start loading in the next one
-    doubleSendSPI(X_SPI, Y_SPI, array[i][0], array[i][1]);
-    ++i;
-    i %= ARRAY_SIZE;
 }
 
 void configureDelayTimer() {
@@ -107,7 +89,7 @@ void configureGPIOs() {
     pinMode(GPIOC, GPIO_PC11, GPIO_OUTPUT);     // Y_SHIFT_REG_LD   (red wire)
     alternateFunctionMode(GPIOC, GPIO_PC12, 6); // Y_SHIFT_REG_DATA (brown wire)  alt func SPI3_MOSI
 
-    //pinMode(GPIOA, LED_PIN, GPIO_OUTPUT); // LED on the Nucleo (good for debugging but X_SHIFT_REG_CLK uses the same pin)
+    pinMode(GPIOB, LED_PIN, GPIO_OUTPUT); // external debugging LED
 }
 
 void configureBRM() {
@@ -188,44 +170,6 @@ void runDMA(DMA_Stream_TypeDef* dma_stream, uint16_t* source) {
     dma_stream->CR |= DMA_SxCR_EN;
 }
 
-void drawDiamondWithoutInterrupts() {
-    // sets SR.UIF so we can make it through the loop on the first run
-    generateDuration(VEC_TIMER, 1, 2);
-    delay_micros(DELAY_TIM,1);
-
-    // load starting position
-    loadCounter(512,512);
-    delay_micros(DELAY_TIM,1);
-
-    // double triangle shape thing data
-    uint16_t array[6][2] = {{512,0},{0,512},{NEG|512,NEG|512},{NEG|512,0},{0,NEG|512},{512,512}};
-    uint8_t i = 1; // I have no actually no idea which vector it wants to draw first, but ah well this works.
-    while (1) {
-        // start getting next vector
-        i+=1;
-        if (i==6) i=0;
-        // send new values over SPI
-        // (notice how we can accomplish this while VEC_TIMER is busy drawing a vector)
-        //doubleSendSPI(X_SPI, Y_SPI, array[i][0], array[i][1]);
-        runDMA(X_DMA, &array[i][0]);
-        runDMA(Y_DMA, &array[i][1]);
-
-        // wait until we are done drawing
-        while(!(VEC_TIMER->SR & TIM_SR_UIF));
-
-        // strobe shift register output latch
-        //   (aw cheese whiz this is one thing we certainly can't expect a DMA contraption to handle)
-        digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
-        digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
-        digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_LOW);
-        digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
-
-        // generate GO signal
-        VEC_TIMER->SR &= ~(TIM_SR_UIF); // software has to clear this flag
-        generateDuration(VEC_TIMER, 1028, 5);
-    }
-}
-
 void drawDiamond() {
     // drives GOb high when it is done so that we aren't drawing anything
     VEC_TIMER->DIER &= ~(TIM_DIER_UIE); // we don't want to jump into an interrupt until we are at the starting position
@@ -239,6 +183,27 @@ void drawDiamond() {
     VEC_TIMER->DIER |= TIM_DIER_UIE;
     generateDuration(VEC_TIMER, 1, 2);
 }
+
+void TIM5_IRQHandler() {
+    VEC_TIMER->SR &= ~(TIM_SR_UIF); // software has to clear this flag
+
+    // strobe shift register output latch
+    digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
+    digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
+    digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_LOW);
+    digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
+
+    // generate GO signal
+    generateDuration(VEC_TIMER, 1028, 5);
+
+    //uint16_t** array = (currentData==1) ? cubeVectorData1 : cubeVectorData2;
+    // and while we're drawing the current vector, let's start loading in the next one
+    doubleSendSPI(X_SPI, Y_SPI, cubeVectorData1[i][0], cubeVectorData1[i][1]);
+    ++i;
+    i %= ARRAY_SIZE;
+}
+
+void WWDG_IRQHandler(){}
 
 int main(void) {
     configureFlash();
@@ -255,14 +220,19 @@ int main(void) {
 
     configureGPIOs();
 
-    configureDMA(X_DMA, &x_array, &X_SPI->DR);
-    configureDMA(Y_DMA, &y_array, &Y_SPI->DR);
+    //configureDMA(X_DMA, &x_array, &X_SPI->DR);
+    //configureDMA(Y_DMA, &y_array, &Y_SPI->DR);
 
     __enable_irq(); // Enable interrupts globally
 
     loadColor(0, 0, 0b000, 0b011, 0b10);
     drawDiamond();
+    
+    // initial calculation
+    calculateCubeVectorData(cubeVectorData1);
 
+    // default to on to show signs of life
+    digitalWrite(GPIOB, LED_PIN, 1);
     while (1) {
         if (newCommandAvailable) {
             newCommandAvailable = 0;
@@ -281,13 +251,13 @@ int main(void) {
                     rotateZCube(-1);
                     break;
                 case ((uint16_t)'i'):
-                    digitalWrite(GPIOA, LED_PIN, 1);
+                    digitalWrite(GPIOB, LED_PIN, 1);
                     break;
                 case ((uint16_t)'k'):
-                    digitalWrite(GPIOA, LED_PIN, 0);
+                    digitalWrite(GPIOB, LED_PIN, 0);
                     break;
                 case ((uint16_t)'j'):
-                    togglePin(GPIOA, LED_PIN);
+                    togglePin(GPIOB, LED_PIN);
                     break;
             }
 
