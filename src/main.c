@@ -9,7 +9,8 @@
 #include "spi.h"
 #include "vec_gen.h"
 
-#define LED_PIN GPIO_PA10 // actually port b
+#define LED_GPIO GPIOB
+#define LED_PIN GPIO_PB10
 
 #define DELAY_TIM       TIM3
 #define VEC_MASTER_CLK  TIM4
@@ -89,7 +90,7 @@ void configureGPIOs() {
     pinMode(GPIOC, GPIO_PC11, GPIO_OUTPUT);     // Y_SHIFT_REG_LD   (red wire)
     alternateFunctionMode(GPIOC, GPIO_PC12, 6); // Y_SHIFT_REG_DATA (brown wire)  alt func SPI3_MOSI
 
-    pinMode(GPIOB, LED_PIN, GPIO_OUTPUT); // external debugging LED
+    pinMode(LED_GPIO, LED_PIN, GPIO_OUTPUT); // external debugging LED
 }
 
 void configureBRM() {
@@ -128,7 +129,7 @@ void configureDMA(DMA_Stream_TypeDef* dma_stream, uint16_t* source, uint16_t* de
                         DMA_SxCR_MBURST |
                         DMA_SxCR_PBURST |
                         DMA_SxCR_CT | // current target (double buffer mode)
-                        DMA_SxCR_DBM | // double buffer mode                     
+                        DMA_SxCR_DBM | // double buffer mode
                         DMA_SxCR_PL | // priority level
                         DMA_SxCR_PINCOS | // peripheral increment offset size
                         DMA_SxCR_MSIZE |
@@ -206,7 +207,6 @@ void TIM5_IRQHandler() {
 void WWDG_IRQHandler(){}
 
 int main(void) {
-    configureFlash();
     configure84MHzClock();
 
     configureUSART2();
@@ -227,12 +227,14 @@ int main(void) {
 
     loadColor(0, 0, 0b000, 0b011, 0b10);
     drawDiamond();
-    
+
     // initial calculation
+    rotateZCube(45);
     calculateCubeVectorData(cubeVectorData1);
 
     // default to on to show signs of life
-    digitalWrite(GPIOB, LED_PIN, 1);
+    digitalWrite(GPIOA, LED_PIN, 1);
+
     while (1) {
         if (newCommandAvailable) {
             newCommandAvailable = 0;
@@ -251,13 +253,13 @@ int main(void) {
                     rotateZCube(-1);
                     break;
                 case ((uint16_t)'i'):
-                    digitalWrite(GPIOB, LED_PIN, 1);
+                    digitalWrite(LED_GPIO, LED_PIN, 1);
                     break;
                 case ((uint16_t)'k'):
-                    digitalWrite(GPIOB, LED_PIN, 0);
+                    digitalWrite(LED_GPIO, LED_PIN, 0);
                     break;
                 case ((uint16_t)'j'):
-                    togglePin(GPIOB, LED_PIN);
+                    togglePin(LED_GPIO, LED_PIN);
                     break;
             }
 
