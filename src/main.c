@@ -13,6 +13,10 @@
 #define DELAY_TIM       TIM3
 #define VEC_MASTER_CLK  TIM4
 #define VEC_TIMER       TIM5
+#define X_DMA           DMA1
+#define Y_DMA           DMA1
+#define X_DMA_STREAM    DMA1_Stream1
+#define Y_DMA_STREAM    DMA1_Stream2
 
 const unsigned int CUBE_VECTOR_DATA_SIZE = 38; // words
 uint16_t cubeVectorData1[19][2];
@@ -25,6 +29,8 @@ volatile int currentData = 1;
 #define NEG (1 << 10)
 #define ARRAY_SIZE 6
 uint16_t array[ARRAY_SIZE][2] = {{512,0},{0,512},{NEG|512,NEG|512},{NEG|512,0},{0,NEG|512},{512,512}};
+uint16_t x_array[ARRAY_SIZE] = {512,0,NEG|512,NEG|512,0,512};
+uint16_t y_array[ARRAY_SIZE] = {0,512,NEG|512,0,NEG|512,512};
 uint8_t i = 0; // I have no actually no idea which vector it wants to draw first, but ah well this works.
 
 void USART2_IRQHandler() {
@@ -122,8 +128,63 @@ void configureBRM() {
     NVIC_EnableIRQ(TIM5_IRQn);
 }
 
-void configureDMA() {
-    // TODO
+void configureDMA(DMA_Stream_TypeDef* dma_stream, uint16_t* source, uint16_t* destination) {
+    // SxCR register:
+    // - memory-to-memory
+    // - don't increment memory ptr, don't increment periph ptr.
+    // - 16-bit data size for both source and destination.
+    // - High priority (2/3).
+
+    // Disable stream
+    dma_stream->CR &= ~DMA_SxCR_EN;
+    // Wait until it is truly off
+    while (dma_stream->CR & DMA_SxCR_EN_Msk);
+
+    // Fully Reset stream configuration
+    dma_stream->CR &= ~(DMA_SxCR_CHSEL |
+                        DMA_SxCR_MBURST |
+                        DMA_SxCR_PBURST |
+                        DMA_SxCR_CT | // current target (double buffer mode)
+                        DMA_SxCR_DBM | // double buffer mode                     
+                        DMA_SxCR_PL | // priority level
+                        DMA_SxCR_PINCOS | // peripheral increment offset size
+                        DMA_SxCR_MSIZE |
+                        DMA_SxCR_PSIZE |
+                        DMA_SxCR_MINC | // memeory increment
+                        DMA_SxCR_PINC | // peripheral increment
+                        DMA_SxCR_CIRC | // circular mode
+                        DMA_SxCR_DIR | // direction of transfer
+                        DMA_SxCR_PFCTRL | // flow controller selection
+                        DMA_SxCR_TCIE | // transfer complete interrupt enable
+                        DMA_SxCR_HTIE | // half transfer interrupt enable
+                        DMA_SxCR_TEIE | // transfer error interrupt enable
+                        DMA_SxCR_DMEIE | // direct mode error interrupt enable
+                        DMA_SxCR_EN);
+    // Source
+    dma_stream->M0AR = (uint32_t) source;
+    // Destination
+    dma_stream->PAR = (uint32_t) destination;
+    // Data transfer length: we want to go 1 by 1.
+    dma_stream->NDTR = (uint32_t) 1;
+    // Configuration register
+    dma_stream->CR |= ((0b01 << DMA_SxCR_MSIZE_Pos) | // 16 bit source
+                       (0b01 << DMA_SxCR_PSIZE_Pos) | // 16 bit dest
+                       (0b10 << DMA_SxCR_PL_Pos) | // high priority
+                       (0b10 << DMA_SxCR_DIR_Pos)| // direction: memory-to-memory
+                       DMA_SxCR_TCIE); // transfer complete interrupt enable
+}
+
+void runDMA(DMA_Stream_TypeDef* dma_stream, uint16_t* source) {
+    // Disable stream
+    dma_stream->CR &= ~DMA_SxCR_EN;
+    // Wait until it is truly off
+    while (dma_stream->CR & DMA_SxCR_EN_Msk);
+    // Source
+    dma_stream->M0AR = (uint32_t) source;
+    // Data transfer length: we want to go 1 by 1.
+    dma_stream->NDTR = (uint32_t) 1;
+    // Enable
+    dma_stream->CR |= DMA_SxCR_EN;
 }
 
 void drawDiamondWithoutInterrupts() {
@@ -144,7 +205,10 @@ void drawDiamondWithoutInterrupts() {
         if (i==6) i=0;
         // send new values over SPI
         // (notice how we can accomplish this while VEC_TIMER is busy drawing a vector)
-        doubleSendSPI(X_SPI, Y_SPI, array[i][0], array[i][1]);
+        //doubleSendSPI(X_SPI, Y_SPI, array[i][0], array[i][1]);
+        runDMA(X_DMA, &array[i][0]);
+        runDMA(Y_DMA, &array[i][1]);
+
         // wait until we are done drawing
         while(!(VEC_TIMER->SR & TIM_SR_UIF));
 
@@ -189,6 +253,9 @@ int main(void) {
     configureSPI(SPI3);
 
     configureGPIOs();
+
+    configureDMA(X_DMA, &x_array, &X_SPI->DR);
+    configureDMA(Y_DMA, &y_array, &Y_SPI->DR);
 
     __enable_irq(); // Enable interrupts globally
 
