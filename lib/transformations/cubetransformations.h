@@ -15,7 +15,7 @@ static const int BACK_RIGHT_UP_IDX     = 7;
 
 static const float origin[4] = {0, 0, 0, 1};
 
-static const float cubeVertices[8][4] = {
+static float cubeVertices[8][4] = {
     { 1,  1,  1,  1},
     { 1,  1, -1,  1},
     { 1, -1, -1,  1},
