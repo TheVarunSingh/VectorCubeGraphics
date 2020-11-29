@@ -22,12 +22,35 @@ volatile int newCommandAvailable = 0;
 volatile uint16_t lastCommand;
 volatile int currentData = 1;
 
+#define NEG (1 << 10)
+#define ARRAY_SIZE 6
+uint16_t array[ARRAY_SIZE][2] = {{512,0},{0,512},{NEG|512,NEG|512},{NEG|512,0},{0,NEG|512},{512,512}};
+uint8_t i = 0; // I have no actually no idea which vector it wants to draw first, but ah well this works.
+
 void USART2_IRQHandler() {
     if (USART2->SR | USART_SR_RXNE) {
         uint16_t message = USART2->DR;
         lastCommand = message;
         newCommandAvailable = 1;
     }
+}
+
+void TIM5_IRQHandler() {
+    VEC_TIMER->SR &= ~(TIM_SR_UIF); // software has to clear this flag
+
+    // strobe shift register output latch
+    digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
+    digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
+    digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_LOW);
+    digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
+
+    // generate GO signal
+    generateDuration(VEC_TIMER, 1028, 5);
+
+    // and while we're drawing the current vector, let's start loading in the next one
+    doubleSendSPI(X_SPI, Y_SPI, array[i][0], array[i][1]);
+    ++i;
+    i %= ARRAY_SIZE;
 }
 
 void configureDelayTimer() {
@@ -103,8 +126,7 @@ void configureDMA() {
     // TODO
 }
 
-#define NEG (1<<10)
-void drawDiamond() {
+void drawDiamondWithoutInterrupts() {
     // sets SR.UIF so we can make it through the loop on the first run
     generateDuration(VEC_TIMER, 1, 2);
     delay_micros(DELAY_TIM,1);
@@ -139,6 +161,20 @@ void drawDiamond() {
     }
 }
 
+void drawDiamond() {
+    // drives GOb high when it is done so that we aren't drawing anything
+    VEC_TIMER->DIER &= ~(TIM_DIER_UIE); // we don't want to jump into an interrupt until we are at the starting position
+    generateDuration(VEC_TIMER, 1, 2);
+
+    // load starting position
+    loadCounter(512,512);
+    delay_micros(DELAY_TIM,1000);
+
+    // now generate an update to start the interrupt cycle
+    VEC_TIMER->DIER |= TIM_DIER_UIE;
+    generateDuration(VEC_TIMER, 1, 2);
+}
+
 int main(void) {
     configureFlash();
     configure84MHzClock();
@@ -158,6 +194,7 @@ int main(void) {
 
     generateDuration(VEC_TIMER, 1, 2);
     loadColor(0, 0, 0b000, 0b011, 0b10);
+    drawDiamond();
 
     while (1) {
         if (newCommandAvailable) {
