@@ -26,9 +26,9 @@ static const float cubeVertices[8][4] = {
     {-1,  1,  1,  1}
 };
 
-static float cubeEdges[19][4];
+volatile static float cubeEdges[19][4];
 
-static float cubeVectorDataFloats[19][2];
+volatile static float cubeVectorDataFloats[19][2];
 
 void translateCube(float tx, float ty, float tz);
 void scaleCube(float sx, float sy, float sz);

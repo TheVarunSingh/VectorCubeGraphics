@@ -15,8 +15,8 @@
 #define VEC_TIMER       TIM5
 
 const unsigned int CUBE_VECTOR_DATA_SIZE = 38; // words
-float cubeVectorData1[19][2];
-float cubeVectorData2[19][2];
+uint16_t cubeVectorData1[19][2];
+uint16_t cubeVectorData2[19][2];
 
 volatile int newCommandAvailable = 0;
 volatile uint16_t lastCommand;
@@ -157,7 +157,7 @@ void drawDiamondWithoutInterrupts() {
 
         // generate GO signal
         VEC_TIMER->SR &= ~(TIM_SR_UIF); // software has to clear this flag
-        genDuration(VEC_TIMER, 1028, 5);
+        generateDuration(VEC_TIMER, 1028, 5);
     }
 }
 
