@@ -56,7 +56,6 @@ void TIM5_IRQHandler() {
 void configureDelayTimer() {
     RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
     configureTimer(TIM3);
-    NVIC_EnableIRQ(TIM3_IRQn);
 }
 
 void configureUSART2() {
@@ -101,7 +100,7 @@ void configureGPIOs() {
     pinMode(GPIOC, GPIO_PC11, GPIO_OUTPUT);     // Y_SHIFT_REG_LD   (red wire)
     alternateFunctionMode(GPIOC, GPIO_PC12, 6); // Y_SHIFT_REG_DATA (brown wire)  alt func SPI3_MOSI
 
-    pinMode(GPIOA, LED_PIN, GPIO_OUTPUT); // LED on the Nucleo
+    //pinMode(GPIOA, LED_PIN, GPIO_OUTPUT); // LED on the Nucleo (good for debugging but X_SHIFT_REG_CLK uses the same pin)
 }
 
 void configureBRM() {
@@ -120,6 +119,7 @@ void configureBRM() {
     configureCaptureCompare(VEC_TIMER);
     configureDuration(VEC_TIMER, 0, 1, 0b010);
     VEC_TIMER->DIER |= TIM_DIER_UIE; // enable interrupt req upon updating
+    NVIC_EnableIRQ(TIM5_IRQn);
 }
 
 void configureDMA() {
@@ -192,7 +192,6 @@ int main(void) {
 
     __enable_irq(); // Enable interrupts globally
 
-    generateDuration(VEC_TIMER, 1, 2);
     loadColor(0, 0, 0b000, 0b011, 0b10);
     drawDiamond();
 
