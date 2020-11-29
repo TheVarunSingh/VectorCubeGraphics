@@ -39,7 +39,7 @@ void subtractCubeVertices(int idx1, int idx2, float result[4]) {
 }
 
 void calculateCubeEdges() {
-    subtractCubeVertices(       -1,                     -1,             cubeEdges[0]);
+    subtractCubeVertices(        -1,                    -1,             cubeEdges[0]);
     subtractCubeVertices(FRONT_RIGHT_UP_IDX,            -1,             cubeEdges[1]);
     subtractCubeVertices(BACK_RIGHT_UP_IDX,     FRONT_RIGHT_UP_IDX,     cubeEdges[2]);
     subtractCubeVertices(BACK_RIGHT_DOWN_IDX,   BACK_RIGHT_UP_IDX,      cubeEdges[3]);
@@ -60,9 +60,24 @@ void calculateCubeEdges() {
     subtractCubeVertices(        -1,            FRONT_RIGHT_UP_IDX,     cubeEdges[18]);
 }
 
-void calculateCubeVectorData(float vectorData[19][2]) {
+void calculateCubeVectorDataFloats() {
     calculateCubeEdges();
     for (int i = 0; i < 19; ++i) {
-        projectOrthogonally(cubeEdges[i], vectorData[i]);
+        projectOrthogonally(cubeEdges[i], cubeVectorDataFloats[i]);
+    }
+}
+
+#define NEG (1<<10)
+void calculateCubeVectorData(uint16_t vectorData[19][2]) {
+    calculateCubeVectorDataFloats();
+    for (int i = 0; i < 19; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            float val = 100 * cubeVectorDataFloats[i][j];
+            if (val >= 0) {
+                vectorData[i][j] = (uint16_t)(val);
+            } else {
+                vectorData[i][j] = NEG|((uint16_t)(-val));
+            }
+        }
     }
 }

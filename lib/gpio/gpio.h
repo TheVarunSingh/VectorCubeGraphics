@@ -3,6 +3,10 @@
 
 #include "stm32f4xx.h"
 
+// Logic Levels
+#define GPIO_LOW    0
+#define GPIO_HIGH   1
+
 // Arbitrary GPIO functions for pinMode()
 #define GPIO_INPUT  0
 #define GPIO_OUTPUT 1
@@ -43,6 +47,23 @@
 #define GPIO_PB13   13
 #define GPIO_PB14   14
 #define GPIO_PB15   15
+
+#define GPIO_PC0    0
+#define GPIO_PC1    1
+#define GPIO_PC2    2
+#define GPIO_PC3    3
+#define GPIO_PC4    4
+#define GPIO_PC5    5
+#define GPIO_PC6    6
+#define GPIO_PC7    7
+#define GPIO_PC8    8
+#define GPIO_PC9    9
+#define GPIO_PC10   10
+#define GPIO_PC11   11
+#define GPIO_PC12   12
+#define GPIO_PC13   13
+#define GPIO_PC14   14
+#define GPIO_PC15   15
 
 void pinMode(GPIO_TypeDef * GPIOx, int pin, int function);
 void alternateFunctionMode(GPIO_TypeDef * GPIOx, int pin, int alt_func);

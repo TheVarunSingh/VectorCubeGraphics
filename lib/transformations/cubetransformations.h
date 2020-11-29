@@ -2,6 +2,7 @@
 #define __CUBETRANSFORMATIONS_H__
 
 #include "transformations.h"
+#include <stdint.h>
 
 static const int FRONT_RIGHT_UP_IDX    = 0;
 static const int FRONT_RIGHT_DOWN_IDX  = 1;
@@ -27,11 +28,13 @@ static const float cubeVertices[8][4] = {
 
 static float cubeEdges[19][4];
 
+static float cubeVectorDataFloats[19][2];
+
 void translateCube(float tx, float ty, float tz);
 void scaleCube(float sx, float sy, float sz);
 void rotateXCube(int deg);
 void rotateYCube(int deg);
 void rotateZCube(int deg);
-void calculateCubeVectorData(float vectorData[19][2]);
+void calculateCubeVectorData(uint16_t vectorData[19][2]);
 
 #endif

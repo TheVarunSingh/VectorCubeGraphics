@@ -17,6 +17,7 @@ void pinMode(GPIO_TypeDef * GPIOx, int pin, int function) {
             GPIOx->MODER |= (0b11 << 2*pin);
             break;
     }
+    GPIOx->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR11; // speedy
 }
 
 void alternateFunctionMode(GPIO_TypeDef * GPIOx, int pin, int alt_func) {
