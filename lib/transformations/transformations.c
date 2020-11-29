@@ -63,7 +63,7 @@ void rotateX(float vector[4], int deg) {
             rotatePositiveX(vector);
         }
     } else {
-        for (int i = 0; i < deg; ++ i) {
+        for (int i = 0; i < -deg; ++ i) {
             rotateNegativeX(vector);
         }
     }
@@ -96,7 +96,7 @@ void rotateY(float vector[4], int deg) {
             rotatePositiveY(vector);
         }
     } else {
-        for (int i = 0; i < deg; ++ i) {
+        for (int i = 0; i < -deg; ++ i) {
             rotateNegativeY(vector);
         }
     }
@@ -129,7 +129,7 @@ void rotateZ(float vector[4], int deg) {
             rotatePositiveZ(vector);
         }
     } else {
-        for (int i = 0; i < deg; ++ i) {
+        for (int i = 0; i < -deg; ++ i) {
             rotateNegativeZ(vector);
         }
     }
