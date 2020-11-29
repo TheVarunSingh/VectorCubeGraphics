@@ -36,6 +36,9 @@ uint16_t sendReceiveSPI(SPI_TypeDef * SPIx, uint16_t data) {
 
 void doubleSendSPI(SPI_TypeDef* SPIx, SPI_TypeDef* SPIy, uint16_t dataX, uint16_t dataY) {
     /* Small optimization for sending to two SPI ports */
+    SPIx->DR = dataX;
+    SPIy->DR = dataY;
+    /*
     // Transmit
     int xSent = 0; // has x data been sent yet
     int ySent = 0; // has y data been sent yet
@@ -48,5 +51,5 @@ void doubleSendSPI(SPI_TypeDef* SPIx, SPI_TypeDef* SPIy, uint16_t dataX, uint16_
             SPIy->DR = dataY; // load data into TX buffer to begin transfer
             ySent = 1; // flag y data as sent
         }
-    }
+    }*/
 }
