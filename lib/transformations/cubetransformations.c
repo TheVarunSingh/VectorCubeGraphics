@@ -31,11 +31,12 @@ void rotateZCube(int deg) {
 }
 
 void subtractCubeVertices(int idx1, int idx2, float result[4]) {
-    for (int i = 0; i < 4; ++i) {
-        float a = idx1 < 0 ? origin[i] : cubeVertices[idx1][i];
-        float b = idx1 < 0 ? origin[i] : cubeVertices[idx2][i];
-        result[i] = a - b;
+    float weight1 = idx1 < 0 ? origin[3] : cubeVertices[idx1][3];
+    float weight2 = idx2 < 0 ? origin[3] : cubeVertices[idx2][3];
+    for (int i = 0; i < 3; ++i) {
+        result[i] = weight2 * cubeVertices[idx1][i] - weight1 * cubeVertices[idx2][i];
     }
+    result[3] = weight1 * weight2;
 }
 
 void calculateCubeEdges() {
