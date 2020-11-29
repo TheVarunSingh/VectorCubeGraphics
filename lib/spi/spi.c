@@ -23,14 +23,15 @@ void configureSPI(SPI_TypeDef * SPIx) {
     SPIx->CR1 |= SPI_CR1_SPE; // Enable SPI
 }
 
-void sendReceiveSPI(SPI_TypeDef * SPIx, uint16_t data) {
+uint16_t sendReceiveSPI(SPI_TypeDef * SPIx, uint16_t data) {
     // Transmit
     while (!(SPIx->SR & SPI_SR_TXE)); // Wait until TX buffer is ready for data to be written
     SPIx->DR = data; // load data into TX buffer to begin transfer
 
     // Receive
     while (!(SPIx->SR & SPI_SR_RXNE)); // Wait until RX buffer is ready for data to be read
-    return SPIx->DR; // Read data from RX buffer
+    uint16_t message = SPIx->DR; // Read data from RX buffer
+    return message;
 }
 
 void doubleSendSPI(SPI_TypeDef* SPIx, SPI_TypeDef* SPIy, uint16_t dataX, uint16_t dataY) {
@@ -38,12 +39,12 @@ void doubleSendSPI(SPI_TypeDef* SPIx, SPI_TypeDef* SPIy, uint16_t dataX, uint16_
     // Transmit
     int xSent = 0; // has x data been sent yet
     int ySent = 0; // has y data been sent yet
-    while ((xSent == 0) && (ySent == 0)) {
-        if (SPIx->SR & SPI_SR_TXE) { // wait until TX buffer is ready for data to be written
+    while ((xSent == 0) || (ySent == 0)) {
+        if ((xSent == 0) && (SPIx->SR & SPI_SR_TXE)) { // wait until TX buffer is ready for data to be written
             SPIx->DR = dataX; // load data into TX buffer to begin transfer
             xSent = 1; // flag x data as sent
         }
-        if (SPIy->SR & SPI_SR_TXE) { // wait until TX buffer is ready for data to be written
+        if ((ySent == 0) && (SPIy->SR & SPI_SR_TXE)) { // wait until TX buffer is ready for data to be written
             SPIy->DR = dataY; // load data into TX buffer to begin transfer
             ySent = 1; // flag y data as sent
         }

@@ -56,7 +56,7 @@ void configureDuration(TIM_TypeDef * TIMx, uint32_t prescale, uint8_t slave_mode
     TIMx->ARR = 1;  // set max count to 1 as a default so that
                     // we generate update events quickly when we turn timer on
     TIMx->CR1 |= TIM_CR1_OPM;   // stop counter at update events; we want to time out just one pulse
-    TIMx->DIER |= TIM_DIER_UIE; // enable interrupts upon updating
+    //TIMx->DIER |= TIM_DIER_UIE; // enable interrupts upon updating
 
     /* Implement Settings */
     TIMx->CR1 |= TIM_CR1_URS;   // let only counter under/overflows generate interrupts
