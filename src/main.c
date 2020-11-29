@@ -15,8 +15,8 @@
 #define VEC_TIMER       TIM5
 
 const unsigned int CUBE_VECTOR_DATA_SIZE = 38; // words
-float cubeVectorData1[19][2];
-float cubeVectorData2[19][2];
+uint16_t cubeVectorData1[19][2];
+uint16_t cubeVectorData2[19][2];
 
 volatile int newCommandAvailable = 0;
 volatile uint16_t lastCommand;
@@ -25,7 +25,11 @@ volatile int currentData = 1;
 #define NEG (1 << 10)
 #define ARRAY_SIZE 6
 uint16_t array[ARRAY_SIZE][2] = {{512,0},{0,512},{NEG|512,NEG|512},{NEG|512,0},{0,NEG|512},{512,512}};
-uint8_t i = 0; // I have no actually no idea which vector it wants to draw first, but ah well this works.
+uint8_t iii = 0; // I have no actually no idea which vector it wants to draw first, but ah well this works.
+
+const uint16_t CHAR_ARRAY_SIZE = 20;
+const uint8_t CHAR_ARRAY1[20] = "This is a DMA Test!\n";
+const uint8_t CHAR_ARRAY2[20] = "Second bu-bu-buffer\n";
 
 void USART2_IRQHandler() {
     if (USART2->SR | USART_SR_RXNE) {
@@ -48,9 +52,9 @@ void TIM5_IRQHandler() {
     generateDuration(VEC_TIMER, 1028, 5);
 
     // and while we're drawing the current vector, let's start loading in the next one
-    doubleSendSPI(X_SPI, Y_SPI, array[i][0], array[i][1]);
-    ++i;
-    i %= ARRAY_SIZE;
+    doubleSendSPI(X_SPI, Y_SPI, array[iii][0], array[iii][1]);
+    ++iii;
+    iii %= ARRAY_SIZE;
 }
 
 void configureDelayTimer() {
@@ -120,9 +124,62 @@ void configureBRM() {
     configureCaptureCompare(VEC_TIMER);
     configureDuration(VEC_TIMER, 0, 1, 0b010);
     VEC_TIMER->DIER |= TIM_DIER_UIE; // enable interrupt req upon updating
+    NVIC_EnableIRQ(TIM5_IRQn);
 }
 
 void configureDMA() {
+    // Enable clock to DMA
+    RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+
+    // SPI3_TX = DMA1 Channel 0 Stream 5
+    // SPI1_TX = DMA2 Channel 3 Stream 3
+
+    // Reset configuration values
+    // - Disable DMA
+    // - Single transfer mode
+    // - Disable double buffer mode
+    // - Disable peripheral increment mode
+    // - Disable circular mode
+    // - Set DMA as the flow controlleer
+    // - Disable interrupts
+    DMA1_Stream5->CR = 0;
+    DMA2_Stream3->CR = 0;
+
+    // Select DMA1 Stream 5 Channel 3
+    DMA1_Stream5->CR |= (5 << DMA_SxCR_CHSEL_Pos);
+
+    // Select DMA2 Stream3 Channel 3
+    DMA2_Stream3->CR |= (3 << DMA_SxCR_CHSEL_Pos);
+
+    // High priority (3/4)
+    DMA1_Stream5->CR |= (0b10 << DMA_SxCR_PL_Pos);
+    DMA2_Stream3->CR |= (0b10 << DMA_SxCR_PL_Pos);
+
+    /*
+    // Data size is 16-bits (half-word)
+    DMA1_Stream5->CR |= (0b01 << DMA_SxCR_MSIZE_Pos);
+    DMA1_Stream5->CR |= (0b01 << DMA_SxCR_PSIZE_Pos);
+    DMA2_Stream3->CR |= (0b01 << DMA_SxCR_MSIZE_Pos);
+    DMA2_Stream3->CR |= (0b01 << DMA_SxCR_PSIZE_Pos);
+    */
+
+    // Enable memory increment mode
+    DMA1_Stream5->CR |= DMA_SxCR_MINC;
+    DMA2_Stream3->CR |= DMA_SxCR_MINC;
+
+    // Memory-to-peripheral
+    DMA1_Stream5->CR |= (0b01 << DMA_SxCR_DIR_Pos);
+    DMA2_Stream3->CR |= (0b01 << DMA_SxCR_DIR_Pos);
+
+    // Peripheral address for DMA1 Stream 5 is SPI3 data register address
+    DMA1_Stream5->PAR = (uint32_t) &(SPI3->DR);
+
+    // Peripheral address for DMA2 Stream 3 is SPI1 data register address
+    DMA2_Stream3->PAR = (uint32_t) &(SPI1->DR);
+}
+
+void DMA_test() {
     // TODO
 }
 
@@ -157,7 +214,7 @@ void drawDiamondWithoutInterrupts() {
 
         // generate GO signal
         VEC_TIMER->SR &= ~(TIM_SR_UIF); // software has to clear this flag
-        genDuration(VEC_TIMER, 1028, 5);
+        generateDuration(VEC_TIMER, 1028, 5);
     }
 }
 
@@ -176,7 +233,6 @@ void drawDiamond() {
 }
 
 int main(void) {
-    configureFlash();
     configure84MHzClock();
 
     configureUSART2();
