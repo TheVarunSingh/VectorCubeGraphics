@@ -493,7 +493,21 @@ void TIM5_IRQHandler() {
 void WWDG_IRQHandler(){}
 
 void staticImages() {
-    
+    addLoadToBuffer(260, 902, 0b000, 0b100, 0b00);
+    addVectorsToBuffer(h_x,h_y,h_z,6);
+    addVectorsToBuffer(e_x,e_y,e_z,7);
+    addVectorsToBuffer(l_x,l_y,l_z,4);
+    addVectorsToBuffer(l_x,l_y,l_z,4);
+    addVectorsToBuffer(o_x,o_y,o_z,5);
+    addLoadToBuffer(185, 50, 0b011, 0b000, 0b00);
+    addVectorsToBuffer(g_x,g_y,g_z,8);
+    addVectorsToBuffer(a_x,a_y,a_z,7);
+    addVectorsToBuffer(m_x,m_y,m_z,5);
+    addVectorsToBuffer(e_x,e_y,e_z,7);
+    addVectorsToBuffer(r_x,r_y,r_z,7);
+    addVectorsToBuffer(s_x,s_y,s_z,6);
+    addLoadToBuffer(512, 342, 0b011, 0b011, 0b0);
+    buff_w->anim_index=buff_w->top;
 }
 int main(void) {
     configure84MHzClock();
@@ -513,39 +527,10 @@ int main(void) {
 
     __enable_irq(); // Enable interrupts globally
 
-    // generate "HELLO GAMER" static text
-    addLoadToBuffer(260, 602, 0b000, 0b100, 0b00);
-    addVectorsToBuffer(h_x,h_y,h_z,6);
-    addVectorsToBuffer(e_x,e_y,e_z,7);
-    addVectorsToBuffer(l_x,l_y,l_z,4);
-    addVectorsToBuffer(l_x,l_y,l_z,4);
-    addVectorsToBuffer(o_x,o_y,o_z,5);
-    addLoadToBuffer(185, 342, 0b011, 0b000, 0b00);
-    addVectorsToBuffer(g_x,g_y,g_z,8);
-    addVectorsToBuffer(a_x,a_y,a_z,7);
-    addVectorsToBuffer(m_x,m_y,m_z,5);
-    addVectorsToBuffer(e_x,e_y,e_z,7);
-    addVectorsToBuffer(r_x,r_y,r_z,7);
-    addVectorsToBuffer(s_x,s_y,s_z,6);
-    addLoadToBuffer(512, 342, 0b011, 0b011, 0b0);
-    buff_w->anim_index=buff_w->top;
+    staticImages();
     swapBuffers();
-    // and regenerate it for second buffer
-    addLoadToBuffer(260, 602, 0b000, 0b100, 0b00);
-    addVectorsToBuffer(h_x,h_y,h_z,6);
-    addVectorsToBuffer(e_x,e_y,e_z,7);
-    addVectorsToBuffer(l_x,l_y,l_z,4);
-    addVectorsToBuffer(l_x,l_y,l_z,4);
-    addVectorsToBuffer(o_x,o_y,o_z,5);
-    addLoadToBuffer(185, 342, 0b011, 0b000, 0b00);
-    addVectorsToBuffer(g_x,g_y,g_z,8);
-    addVectorsToBuffer(a_x,a_y,a_z,7);
-    addVectorsToBuffer(m_x,m_y,m_z,5);
-    addVectorsToBuffer(e_x,e_y,e_z,7);
-    addVectorsToBuffer(r_x,r_y,r_z,7);
-    addVectorsToBuffer(s_x,s_y,s_z,6);
-    addLoadToBuffer(512, 342, 0b011, 0b011, 0b0);
-    buff_w->anim_index=buff_w->top;
+    // and regenerate images for second buffer
+    staticImages();
 
     beginDrawing();
 
