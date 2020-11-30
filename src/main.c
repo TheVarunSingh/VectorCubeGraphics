@@ -170,7 +170,7 @@ void drawDiamond() {
     generateDuration(VEC_TIMER, 1, 2);
 
     // load starting position
-    loadCounter(512,512);
+    loadCounter(512,200);
     delay_micros(DELAY_TIM,1000);
 
     // now generate an update to start the interrupt cycle
@@ -181,7 +181,6 @@ void drawDiamond() {
 void TIM5_IRQHandler() {
     VEC_TIMER->SR &= ~(TIM_SR_UIF); // software has to clear this flag
 
-    /*
     // strobe shift register output latch
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
@@ -193,12 +192,11 @@ void TIM5_IRQHandler() {
 
     //uint16_t** array = (currentData==1) ? cubeVectorData1 : cubeVectorData2;
     // and while we're drawing the current vector, let's start loading in the next one
-    //doubleSendSPI(X_SPI, Y_SPI, cubeVectorData1[i][0], cubeVectorData1[i][1]);
-    runDMA(X_DMA_STREAM, &cubeVectorData1[i][0]);
-    runDMA(Y_DMA_STREAM, &cubeVectorData1[i][1]);
+    doubleSendSPI(X_SPI, Y_SPI, cubeVectorData1[i][0], cubeVectorData1[i][1]);
+    //runDMA(X_DMA_STREAM, &cubeVectorData1[i][0]);
+    //runDMA(Y_DMA_STREAM, &cubeVectorData1[i][1]);
     ++i;
     i %= ARRAY_SIZE;
-    */
 }
 
 void WWDG_IRQHandler(){}

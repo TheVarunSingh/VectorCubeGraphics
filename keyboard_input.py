@@ -3,15 +3,17 @@ from sys import platform
 
 if "win32" in platform:
     import msvcrt
+    the_port='COM7'
 else:
     import getch
+    the_port='/dev/ttyACM1'
 
 VALID_CHARS = "wasdqeijkluovn"
 QUIT_CHARS = "b"
 
 def openSerialPort():
     serialPort = serial.Serial(
-        port='COM7',
+        port=the_port,
         baudrate=115200,
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
