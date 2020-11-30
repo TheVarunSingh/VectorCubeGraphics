@@ -368,9 +368,8 @@ void runDMA(uint16_t * source, uint16_t * destination, uint32_t numberOfDatas) {
     DMA2_Stream0->CR &= ~DMA_SxCR_EN;
     while (DMA2_Stream0->CR & DMA_SxCR_EN_Msk); // wait until stream is off
 
-    // Clear interrupt flags
-    DMA2->LIFCR |= 0b00001111011111010000111101111101;
-    DMA2->HIFCR |= 0b00001111011111010000111101111101;
+    // Clear Status Registers
+    DMA2->LIFCR |= (DMA_LIFCR_CTCIF0 | DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTEIF0 | DMA_LIFCR_CDMEIF0 | DMA_LIFCR_CFEIF0);
 
     // Configure source and destination
     DMA2_Stream0->PAR  = (uint32_t) source;
