@@ -42,152 +42,152 @@ uint16_t testDataDest[6] = {4,5,6,7,8,9};
 #define LD_POS (1<<10) // loads new absolute position
 
 /* Font */
-uint16_t space_x[1] = {12};
+uint16_t space_x[1] = {120};
 uint16_t space_y[1] = {0};
 uint16_t space_z[1] = {0};
 
-uint16_t zero_x[5] = {0, 8, 0, NEG|8, 12};
-uint16_t zero_y[5] = {12, 0, NEG|12, 0, 0};
+uint16_t zero_x[5] = {0, 80, 0, NEG|80, 120};
+uint16_t zero_y[5] = {120, 0, NEG|120, 0, 0};
 uint16_t zero_z[5] = {0,0,0,0,BNK};
 
-uint16_t one_x[3] = {4,0,8};
-uint16_t one_y[3] = {12,NEG|12,0};
+uint16_t one_x[3] = {40,0,80};
+uint16_t one_y[3] = {120,NEG|120,0};
 uint16_t one_z[3] = {BNK,0,BNK};
 
-uint16_t two_x[7] = {0,8,0,NEG|8,0,8,4};
-uint16_t two_y[7] = {12,0,NEG|6,0,NEG|6,0,0};
+uint16_t two_x[7] = {0,80,0,NEG|80,0,80,40};
+uint16_t two_y[7] = {120,0,NEG|60,0,NEG|60,0,0};
 uint16_t two_z[7] = {BNK,0,0,0,0,0,BNK};
 
-uint16_t three_x[7] = {0,8,0,NEG|8,0,8,4};
-uint16_t three_y[7] = {12,0,NEG|12,0,6,0,NEG|6};
+uint16_t three_x[7] = {0,80,0,NEG|80,0,80,40};
+uint16_t three_y[7] = {120,0,NEG|120,0,60,0,NEG|60};
 uint16_t three_z[7] = {BNK,0,0,0,BNK,0,BNK};
 
-uint16_t four_x[6] = {0,0,8,0,0,4};
-uint16_t four_y[6] = {12,NEG|6,0,6,NEG|12,0};
+uint16_t four_x[6] = {0,0,80,0,0,40};
+uint16_t four_y[6] = {120,NEG|60,0,60,NEG|120,0};
 uint16_t four_z[6] = {BNK,0,0,BNK,0,BNK};
 
-uint16_t five_x[6] = {8,0,NEG|8,0,8,4};
-uint16_t five_y[6] = {0,6,0,6,0,NEG|12};
+uint16_t five_x[6] = {80,0,NEG|80,0,80,40};
+uint16_t five_y[6] = {0,60,0,60,0,NEG|120};
 uint16_t five_z[6] = {0,0,0,0,0,BNK};
 
-uint16_t six_x[6] = {0,8,0,NEG|8,0,12};
-uint16_t six_y[6] = {6,0,NEG|6,0,12,NEG|12};
+uint16_t six_x[6] = {0,80,0,NEG|80,0,120};
+uint16_t six_y[6] = {60,0,NEG|60,0,120,NEG|120};
 uint16_t six_z[6] = {BNK,0,0,0,0,BNK};
 
-uint16_t seven_x[4] = {0,8,0,4};
-uint16_t seven_y[4] = {12,0,NEG|12,0};
+uint16_t seven_x[4] = {0,80,0,40};
+uint16_t seven_y[4] = {120,0,NEG|120,0};
 uint16_t seven_z[4] = {BNK,0,0,BNK};
 
-uint16_t eight_x[7] = {0,8,0,NEG|8,0,8,4};
-uint16_t eight_y[7] = {12,0,NEG|12,0,6,0,NEG|6};
+uint16_t eight_x[7] = {0,80,0,NEG|80,0,80,40};
+uint16_t eight_y[7] = {120,0,NEG|120,0,60,0,NEG|60};
 uint16_t eight_z[7] = {0,0,0,0,BNK,0,BNK};
 
-uint16_t nine_x[6] = {8,NEG|8,0,8,0,4};
-uint16_t nine_y[6] = {6,0,6,0,NEG|12,0};
+uint16_t nine_x[6] = {80,NEG|80,0,80,0,40};
+uint16_t nine_y[6] = {60,0,60,0,NEG|120,0};
 uint16_t nine_z[6] = {BNK,0,0,0,0,BNK};
 
-uint16_t a_x[7] = {0,4,4,0,NEG|8,8,4};
-uint16_t a_y[7] = {8,4,NEG|4,NEG|8,4,0,NEG|4};
+uint16_t a_x[7] = {0,40,40,0,NEG|80,80,40};
+uint16_t a_y[7] = {80,40,NEG|40,NEG|80,40,0,NEG|40};
 uint16_t a_z[7] = {0,0,0,0,BNK,0,BNK};
 
-uint16_t b_x[12] = {0,6,2,0,NEG|2,NEG|6,6,2,0,NEG|2,NEG|6,12};
-uint16_t b_y[12] = {12,0,NEG|2,NEG|2,NEG|2,0,0,NEG|2,NEG|2,NEG|2,0,0};
+uint16_t b_x[12] = {0,60,20,0,NEG|20,NEG|60,60,20,0,NEG|20,NEG|60,120};
+uint16_t b_y[12] = {120,0,NEG|20,NEG|20,NEG|20,0,0,NEG|20,NEG|20,NEG|20,0,0};
 uint16_t b_z[12] = {0,0,0,0,0,0,BNK,0,0,0,0,BNK};
 
-uint16_t c_x[5] = {0,8,NEG|8,8,4};
-uint16_t c_y[5] = {12,0,NEG|12,0,0};
+uint16_t c_x[5] = {0,80,NEG|80,80,40};
+uint16_t c_y[5] = {120,0,NEG|120,0,0};
 uint16_t c_z[5] = {0,0,BNK,0,BNK};
 
-uint16_t d_x[7] = {0,4,4,0,NEG|4,NEG|4,12};
-uint16_t d_y[7] = {12,0,NEG|4,NEG|4,NEG|4,0,0};
+uint16_t d_x[7] = {0,40,40,0,NEG|40,NEG|40,120};
+uint16_t d_y[7] = {120,0,NEG|40,NEG|40,NEG|40,0,0};
 uint16_t d_z[7] = {0,0,0,0,0,0,BNK};
 
-uint16_t e_x[7] = {8,NEG|8,0,8,NEG|2,NEG|6,12};
-uint16_t e_y[7] = {0,0,12,0,NEG|6,0,NEG|6};
+uint16_t e_x[7] = {80,NEG|80,0,80,NEG|20,NEG|60,120};
+uint16_t e_y[7] = {0,0,120,0,NEG|60,0,NEG|60};
 uint16_t e_z[7] = {0,BNK,0,0,BNK,0,BNK};
 
-uint16_t f_x[5] = {0,8,NEG|2,NEG|6,12};
-uint16_t f_y[5] = {12,0,NEG|6,0,NEG|6};
+uint16_t f_x[5] = {0,80,NEG|20,NEG|60,120};
+uint16_t f_y[5] = {120,0,NEG|60,0,NEG|60};
 uint16_t f_z[5] = {0,0,BNK,0,BNK};
 
-uint16_t g_x[8] = {0,8,0,NEG|4,4,0,NEG|8,12};
-uint16_t g_y[8] = {12,0,NEG|4,NEG|4,0,NEG|4,0,0};
+uint16_t g_x[8] = {0,80,0,NEG|40,40,0,NEG|80,120};
+uint16_t g_y[8] = {120,0,NEG|40,NEG|40,0,NEG|40,0,0};
 uint16_t g_z[8] = {0,0,0,BNK,0,0,0,BNK};
 
-uint16_t h_x[6] = {0,0,8,0,0,4};
-uint16_t h_y[6] = {12,NEG|6,0,6,NEG|12,0};
+uint16_t h_x[6] = {0,0,80,0,0,40};
+uint16_t h_y[6] = {120,NEG|60,0,60,NEG|120,0};
 uint16_t h_z[6] = {0,BNK,0,BNK,0,BNK};
 
-uint16_t i_x[6] = {8,NEG|8,8,NEG|4,0,8};
-uint16_t i_y[6] = {0,12,0,0,NEG|12,0};
+uint16_t i_x[6] = {80,NEG|80,80,NEG|40,0,80};
+uint16_t i_y[6] = {0,120,0,0,NEG|120,0};
 uint16_t i_z[6] = {0,BNK,0,BNK,0,BNK};
 
-uint16_t j_x[5] = {0,4,4,0,4};
-uint16_t j_y[5] = {4,NEG|4,0,12,NEG|12};
+uint16_t j_x[5] = {0,40,40,0,40};
+uint16_t j_y[5] = {40,NEG|40,0,120,NEG|120};
 uint16_t j_z[5] = {BNK,0,0,0,BNK};
 
-uint16_t k_x[5] = {0,6,NEG|6,6,6};
-uint16_t k_y[5] = {12,0,NEG|6,NEG|6,0};
+uint16_t k_x[5] = {0,60,NEG|60,60,60};
+uint16_t k_y[5] = {120,0,NEG|60,NEG|60,0};
 uint16_t k_z[5] = {0,BNK,0,0,BNK};
 
-uint16_t l_x[4] = {0,0,8,4};
-uint16_t l_y[4] = {12,NEG|12,0,0};
+uint16_t l_x[4] = {0,0,80,40};
+uint16_t l_y[4] = {120,NEG|120,0,0};
 uint16_t l_z[4] = {BNK,0,0,BNK};
 
-uint16_t m_x[5] = {0,4,4,0,4};
-uint16_t m_y[5] = {12,NEG|4,4,NEG|12,0};
+uint16_t m_x[5] = {0,40,40,0,40};
+uint16_t m_y[5] = {120,NEG|40,40,NEG|120,0};
 uint16_t m_z[5] = {0,0,0,0,BNK};
 
-uint16_t n_x[4] = {0,8,0,4};
-uint16_t n_y[4] = {12,NEG|12,12,NEG|12};
+uint16_t n_x[4] = {0,80,0,40};
+uint16_t n_y[4] = {120,NEG|120,120,NEG|120};
 uint16_t n_z[4] = {0,0,0,BNK};
 
-uint16_t o_x[5] = {0, 8, 0, NEG|8, 12};
-uint16_t o_y[5] = {12, 0, NEG|12, 0, 0};
+uint16_t o_x[5] = {0, 80, 0, NEG|80, 120};
+uint16_t o_y[5] = {120, 0, NEG|120, 0, 0};
 uint16_t o_z[5] = {0,0,0,0,BNK};
 
-uint16_t p_x[5] = {0,8,0,NEG|8,12};
-uint16_t p_y[5] = {12,0,NEG|6,0,NEG|6};
+uint16_t p_x[5] = {0,80,0,NEG|80,120};
+uint16_t p_y[5] = {120,0,NEG|60,0,NEG|60};
 uint16_t p_z[5] = {0,0,0,0,BNK};
 
-uint16_t q_x[8] = {0,8,0,NEG|4,NEG|4,4,4,4};
-uint16_t q_y[8] = {12,0,NEG|8,NEG|4,0,4,NEG|4,0};
+uint16_t q_x[8] = {0,80,0,NEG|40,NEG|40,40,40,40};
+uint16_t q_y[8] = {120,0,NEG|80,NEG|40,0,40,NEG|40,0};
 uint16_t q_z[8] = {0,0,0,0,0,BNK,0,BNK};
 
-uint16_t r_x[7] = {0,8,0,NEG|8,2,6,4};
-uint16_t r_y[7] = {12,0,NEG|6,0,0,NEG|6,0};
+uint16_t r_x[7] = {0,80,0,NEG|80,20,60,40};
+uint16_t r_y[7] = {120,0,NEG|60,0,0,NEG|60,0};
 uint16_t r_z[7] = {0,0,0,0,BNK,0,BNK};
 
-uint16_t s_x[6] = {8,0,NEG|8,0,8,4};
-uint16_t s_y[6] = {0,6,0,6,0,NEG|12};
+uint16_t s_x[6] = {80,0,NEG|80,0,80,40};
+uint16_t s_y[6] = {0,60,0,60,0,NEG|120};
 uint16_t s_z[6] = {0,0,0,0,0,BNK};
 
-uint16_t t_x[5] = {0,8,NEG|4,0,8};
-uint16_t t_y[5] = {12,0,0,NEG|12,0};
+uint16_t t_x[5] = {0,80,NEG|40,0,80};
+uint16_t t_y[5] = {120,0,0,NEG|120,0};
 uint16_t t_z[5] = {BNK,0,BNK,0,BNK};
 
-uint16_t u_x[5] = {0,0,8,0,4};
-uint16_t u_y[5] = {12,NEG|12,0,12,NEG|12};
+uint16_t u_x[5] = {0,0,80,0,40};
+uint16_t u_y[5] = {120,NEG|120,0,120,NEG|120};
 uint16_t u_z[5] = {BNK,0,0,0,BNK};
 
-uint16_t v_x[4] = {0,4,4,4};
-uint16_t v_y[4] = {12,NEG|12,12,NEG|12};
+uint16_t v_x[4] = {0,40,40,40};
+uint16_t v_y[4] = {120,NEG|120,120,NEG|120};
 uint16_t v_z[4] = {BNK,0,0,BNK};
 
 uint16_t w_x[6] = {0,0,4,4,0,4};
-uint16_t w_y[6] = {12,NEG|12,4,NEG|4,12,NEG|12};
+uint16_t w_y[6] = {120,NEG|120,40,NEG|40,120,NEG|120};
 uint16_t w_z[6] = {BNK,0,0,0,0,BNK};
 
-uint16_t x_x[4] = {8,NEG|8,8,4};
-uint16_t x_y[4] = {12,0,NEG|12,0};
+uint16_t x_x[4] = {80,NEG|80,80,40};
+uint16_t x_y[4] = {120,0,NEG|120,0};
 uint16_t x_z[4] = {0,BNK,0,BNK};
 
-uint16_t y_x[6] = {4,0,NEG|4,8,NEG|4,8};
-uint16_t y_y[6] = {0,8,4,0,NEG|4,NEG|8};
+uint16_t y_x[6] = {40,0,NEG|40,80,NEG|40,80};
+uint16_t y_y[6] = {0,80,40,0,NEG|40,NEG|80};
 uint16_t y_z[6] = {BNK,0,0,BNK,0,BNK};
 
-uint16_t z_x[5] = {0,8,NEG|8,8,4};
-uint16_t z_y[5] = {12,0,NEG|12,0,0};
+uint16_t z_x[5] = {0,80,NEG|80,80,40};
+uint16_t z_y[5] = {120,0,NEG|120,0,0};
 uint16_t z_z[5] = {BNK,0,0,0,BNK};
 
 /* Global Vector Vars */
@@ -213,11 +213,15 @@ unsigned int d_last=0;  // when d_index == d_last, we know we have reached the e
 uint8_t x_color=0;   // current or last color (this is used to reinstate color for a non-blanked vector after a blanked vector has been drawn)
 uint8_t y_color=0;   // current or last color (this is used to reinstate color for a non-blanked vector after a blanked vector has been drawn)
 unsigned int blanked=0; // stores whether the previous vector was blanked
+// Previous Instruction
+uint16_t curr_x=0;
+uint16_t curr_y=0;
+uint16_t curr_z=0;
 
 void addLoad(uint16_t x_pos, uint16_t y_pos, unsigned int red, unsigned int green, unsigned int blue) {
     // this might actually belong in vec_gen library
     // Note that red and green use 3 bits and blue uses 2 bits.
-    // write hardware-relevant data
+    // write hardware-relevant dat0
     x_w_buffer[w_index] = ((green<<14) | (blue<<12) | x_pos);
     y_w_buffer[w_index] = ((red<<13) | ((green>>2)<<12) | y_pos);
     // write control data
@@ -392,70 +396,80 @@ void beginDrawing() {
     generateDuration(VEC_TIMER, 50, 50);
 }
 
+void fetchNextVector() {
+    // Fetch next vector
+    curr_x = x_d_buffer[d_index];
+    curr_y = y_d_buffer[d_index];
+    curr_z = z_d_buffer[d_index];
+    d_index++;
+    if (d_index >= d_last) {
+        // TODO: Swap buffers or raise a flag telling main loop to do that
+        d_index = 0;
+    }
+}
+
 // This is the main function for handling drawing stuff
 void TIM5_IRQHandler() {
     // Clear interrupt flag.
     VEC_TIMER->SR &= ~(TIM_SR_UIF);
-    // Strobe shift register output latch so that hardware can see the data we just loaded in.
+    // Output the previous vector's data by strobing shift reg latch.
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_LOW);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
-    // Now the shift registers are ready for us to start loading in the data for the next vector.
-    // First we might need to add in color to the next vector depending on the current and fututre control signals.
-    // Current control and data signals
-    uint16_t x_data = x_d_buffer[d_index];
-    uint16_t y_data = y_d_buffer[d_index];
-    uint16_t z_data = z_d_buffer[d_index];
-    // And the future control signals. 
-    if (d_index == d_last) {
-        // TODO: If so, switch buffers.
-        // But actually I'm just gonna leep drawing the same one for now.
-        d_index = -1;
-    }
-    uint16_t next_z_data = z_d_buffer[d_index+1];
-    // In case the user goes from blanked to unblanked vectors, we need to add color back in.
-    if ((~(next_z_data&BNK))&(z_data&BNK)) {
-        x_d_buffer[d_index+1] |= x_color<<12;
-        y_d_buffer[d_index+1] |= y_color<<12;
-    }
-    // Now we can start start sending out the data for the next vector.
-    doubleSendSPI(X_SPI, Y_SPI, x_d_buffer[d_index+1], y_d_buffer[d_index+1]);
-
-    // While that's going on, let's parse the control signals for the current vector.
-    // Are we loading in a new color?
-    if (z_data & LD_COL) {
-        // If so, strobe the color latches.
-        digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
-        digitalWrite(GPIOA, COLOR_LD, GPIO_HIGH);
-        digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
-        // And store the colors for future use.
-        x_color = x_data >> 12;
-        y_color = y_data >> 12;
-    // Or have we changed whether we're blanking vectors?
-    } else if ((z_data & BNK)!=blanked) {
-        blanked = (z_data & BNK);
-        // If so, just strobe the color latches.
-        digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
-        digitalWrite(GPIOA, COLOR_LD, GPIO_HIGH);
-        digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
-    }
-    // Are we loading an absolute position?
-    if (z_data & LD_POS) {
+    // Apply control signals for previous vector.
+    //   Strobe color latch if we need to.
+    //   For now, let's always apply color.
+    //if (curr_z & LD_COL) {
+    digitalWrite(GPIOA, COLOR_LD, GPIO_HIGH);
+    digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
+    //}
+    //   Strobe counter parallel load if we need to (moves beam to absolute position)
+    if (curr_z & LD_POS) {
         // If so, strobe the counter parallel load.
-        digitalWrite(GPIOA, COUNT_LD, GPIO_HIGH);
         digitalWrite(GPIOA, COUNT_LD, GPIO_LOW);
         digitalWrite(GPIOA, COUNT_LD, GPIO_HIGH);
-        // And give some time for the beam to settle and the SPI to send,
-        // and set CCR1 so that GOb doesn't activate.
-        generateDuration(VEC_TIMER, 500, 500);
+        fetchNextVector();
+        // For now, let's always add color unless we're blanking the vector
+        if (!(curr_z&BNK)) {
+            curr_x |= x_color<<12;
+            curr_y |= y_color<<12;
+        }
+        // Send out next vector
+        doubleSendSPI(X_SPI, Y_SPI, curr_x, curr_y);
+        // Wait until it's done sending
+        while(!(Y_SPI->SR & SPI_SR_TXE));
+        // And wait some more for the beam to finish moving
+        // Lest we turn on the electron beam in the middle of jumping
+        delay_micros(DELAY_TIM, 100);
+        // Let's go through this again
+        TIM5_IRQHandler();
+        // Sure an SPI interrupt might save some time, but we can get away with this simplicity 
+        // because absolute position loads are pretty infrequent.
     } else {
-        // If not, then hey we be drawing a vector!
-        // Generate GO signal with CCR1.
+        // Run BRM's to draw a line
         generateDuration(VEC_TIMER, 1028, 5);
+        // yes we are counting on the rest of this function to run before this duration times up
+        fetchNextVector();
     }
-    // Increment index to signify we are done processing the current vector.
-    d_index++;
+    // Now let's manually and sequentially process sending the next vector.
+    // Yeah sure there might be some more optimizations if you do this a-sequentially,
+    // (so that you can process stuff while running an SPI transfer),
+    // but I found that very hard to debug because you're juggling the next vector and the current vector all at once.
+    // The STM's pretty fast so I think we can trade in some multitasking for reliability.
+
+    // If says it has color, let's note down that color
+    if (curr_z&LD_COL) {
+        x_color = curr_x>>12;
+        y_color = curr_y>>12;
+    }
+    // For now, let's always add color unless we're blanking the vector
+    if (!(curr_z&BNK)) {
+        curr_x |= x_color<<12;
+        curr_y |= y_color<<12;
+    }
+    // Now we can start start sending out the data for the next vector.
+    doubleSendSPI(X_SPI, Y_SPI, curr_x, curr_y);
 }
 
 void WWDG_IRQHandler(){}
@@ -481,15 +495,53 @@ int main(void) {
     runDMA(testDataSource, testDataDest, testDataSize);
 
     // generate test image
-    addLoad(312, 512, 0b000, 0b011, 0b00);
+    addLoad(260, 602, 0b000, 0b100, 0b00);
     notDMA(h_x,&x_w_buffer[w_index],6);
     notDMA(h_y,&y_w_buffer[w_index],6);
     notDMA(h_z,&z_w_buffer[w_index],6);
     w_index+=6;
-    notDMA(i_x,&x_w_buffer[w_index],6);
-    notDMA(i_y,&y_w_buffer[w_index],6);
-    notDMA(i_z,&z_w_buffer[w_index],6);
+    notDMA(e_x,&x_w_buffer[w_index],7);
+    notDMA(e_y,&y_w_buffer[w_index],7);
+    notDMA(e_z,&z_w_buffer[w_index],7);
+    w_index+=7;
+    notDMA(l_x,&x_w_buffer[w_index],4);
+    notDMA(l_y,&y_w_buffer[w_index],4);
+    notDMA(l_z,&z_w_buffer[w_index],4);
+    w_index+=4;
+    notDMA(l_x,&x_w_buffer[w_index],4);
+    notDMA(l_y,&y_w_buffer[w_index],4);
+    notDMA(l_z,&z_w_buffer[w_index],4);
+    w_index+=4;
+    notDMA(o_x,&x_w_buffer[w_index],5);
+    notDMA(o_y,&y_w_buffer[w_index],5);
+    notDMA(o_z,&z_w_buffer[w_index],5);
+    w_index+=5;
+    addLoad(185, 342, 0b011, 0b000, 0b00);
+    notDMA(g_x,&x_w_buffer[w_index],8);
+    notDMA(g_y,&y_w_buffer[w_index],8);
+    notDMA(g_z,&z_w_buffer[w_index],8);
+    w_index+=8;
+    notDMA(a_x,&x_w_buffer[w_index],7);
+    notDMA(a_y,&y_w_buffer[w_index],7);
+    notDMA(a_z,&z_w_buffer[w_index],7);
+    w_index+=7;
+    notDMA(m_x,&x_w_buffer[w_index],5);
+    notDMA(m_y,&y_w_buffer[w_index],5);
+    notDMA(m_z,&z_w_buffer[w_index],5);
+    w_index+=5;
+    notDMA(e_x,&x_w_buffer[w_index],7);
+    notDMA(e_y,&y_w_buffer[w_index],7);
+    notDMA(e_z,&z_w_buffer[w_index],7);
+    w_index+=7;
+    notDMA(r_x,&x_w_buffer[w_index],7);
+    notDMA(r_y,&y_w_buffer[w_index],7);
+    notDMA(r_z,&z_w_buffer[w_index],7);
+    w_index+=7;
+    notDMA(s_x,&x_w_buffer[w_index],6);
+    notDMA(s_y,&y_w_buffer[w_index],6);
+    notDMA(s_z,&z_w_buffer[w_index],6);
     w_index+=6;
+    
     swapBuffers();
 
     beginDrawing();
