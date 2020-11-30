@@ -35,6 +35,10 @@ volatile int currentData = 1;
 //uint16_t y_array[ARRAY_SIZE] = {0,512,NEG|512,0,NEG|512,512};
 uint8_t i = 0; // I have no actually no idea which vector it wants to draw first, but ah well this works.
 
+uint16_t testDataSize = 6;
+uint16_t testDataSource[6] = {101, 102, 103, 104, 105, 106};
+uint16_t testDataDest[6] = {4,5,6,7,8,9};
+
 void USART2_IRQHandler() {
     if (USART2->SR | USART_SR_RXNE) {
         uint16_t message = USART2->DR;
@@ -112,63 +116,52 @@ void configureBRM() {
     NVIC_EnableIRQ(TIM5_IRQn);
 }
 
-void configureDMA(DMA_Stream_TypeDef* dma_stream, uint16_t* source, uint16_t* destination) {
-    // SxCR register:
-    // - memory-to-memory
-    // - don't increment memory ptr, don't increment periph ptr.
-    // - 16-bit data size for both source and destination.
-    // - High priority (2/3).
+void configureDMA() {
+    // Using DMA 2 Stream 0 for memory-to-memory transfer
+    // Note that in memory-to-memory, the peripheral stuff is the source and the memory stuff is the dest
+
+    RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
 
     // Disable stream
-    dma_stream->CR &= ~DMA_SxCR_EN;
-    // Wait until it is truly off
-    while (dma_stream->CR & DMA_SxCR_EN_Msk);
+    DMA2_Stream0->CR &= ~DMA_SxCR_EN;
+    while (DMA2_Stream0->CR & DMA_SxCR_EN_Msk); // wait until stream is off
 
-    // Fully Reset stream configuration
-    dma_stream->CR &= ~(DMA_SxCR_CHSEL |
-                        DMA_SxCR_MBURST |
-                        DMA_SxCR_PBURST |
-                        DMA_SxCR_CT | // current target (double buffer mode)
-                        DMA_SxCR_DBM | // double buffer mode
-                        DMA_SxCR_PL | // priority level
-                        DMA_SxCR_PINCOS | // peripheral increment offset size
-                        DMA_SxCR_MSIZE |
-                        DMA_SxCR_PSIZE |
-                        DMA_SxCR_MINC | // memeory increment
-                        DMA_SxCR_PINC | // peripheral increment
-                        DMA_SxCR_CIRC | // circular mode
-                        DMA_SxCR_DIR | // direction of transfer
-                        DMA_SxCR_PFCTRL | // flow controller selection
-                        DMA_SxCR_TCIE | // transfer complete interrupt enable
-                        DMA_SxCR_HTIE | // half transfer interrupt enable
-                        DMA_SxCR_TEIE | // transfer error interrupt enable
-                        DMA_SxCR_DMEIE | // direct mode error interrupt enable
-                        DMA_SxCR_EN);
-    // Source
-    dma_stream->M0AR = (uint32_t) source;
-    // Destination
-    dma_stream->PAR = (uint32_t) destination;
-    // Data transfer length: we want to go 1 by 1.
-    dma_stream->NDTR = (uint32_t) 1;
-    // Configuration register
-    dma_stream->CR |= ((0b01 << DMA_SxCR_MSIZE_Pos) | // 16 bit source
-                       (0b01 << DMA_SxCR_PSIZE_Pos) | // 16 bit dest
-                       (0b10 << DMA_SxCR_PL_Pos) | // high priority
-                       (0b10 << DMA_SxCR_DIR_Pos)| // direction: memory-to-memory
-                       DMA_SxCR_TCIE); // transfer complete interrupt enable
+    // Reset configuration values
+    // - Select channel 0 (channel does not matter for memory-to-memory)
+    // - Single transfer mode
+    // - Disable double buffer mode
+    // - Priority level low (0/4) - will be set to high later
+    // - Memory and peripheral data size are 8 bits - will be set to 16 bits later
+    // - Disable memory and peripheral increment mode - will be enabled later
+    // - Disable circular mode
+    // - Peripheral-to-memory mode - will be set to memory-to-memory later
+    // - Set DMA as the flow controller
+    // - Disable DMA interrupts - some will be enabled later
+    // - Disable the stream (should already be disabled)
+    DMA2_Stream0->CR = 0;
+
+    DMA2_Stream0->CR |= (0b10 << DMA_SxCR_PL_Pos);    // high priority (3/4)
+    DMA2_Stream0->CR |= (0b01 << DMA_SxCR_MSIZE_Pos); // 16-bit memory data size
+    DMA2_Stream0->CR |= (0b01 << DMA_SxCR_PSIZE_Pos); // 16-bit peripheral data size (is this even needed?)
+    DMA2_Stream0->CR |= (0b10 << DMA_SxCR_DIR_Pos);   // memory-to-memory mode
+    DMA2_Stream0->CR |= DMA_SxCR_MINC;                // enable memory increment mode
+    DMA2_Stream0->CR |= DMA_SxCR_PINC;                // enable peripheral increment mode
 }
 
-void runDMA(DMA_Stream_TypeDef* dma_stream, uint16_t* source) {
+void runDMA(uint16_t * source, uint16_t * destination, uint32_t numberOfDatas) {
     // Disable stream
-    dma_stream->CR &= ~DMA_SxCR_EN;
-    // Wait until it is truly off
-    while (dma_stream->CR & DMA_SxCR_EN_Msk);
-    // Source
-    dma_stream->M0AR = (uint32_t) source;
-    // Data transfer length: we want to go 1 by 1.
-    dma_stream->NDTR = (uint32_t) 1;
-    // Enable
-    dma_stream->CR |= DMA_SxCR_EN;
+    DMA2_Stream0->CR &= ~DMA_SxCR_EN;
+    while (DMA2_Stream0->CR & DMA_SxCR_EN_Msk); // wait until stream is off
+
+    // Configure source and destination
+    DMA2_Stream0->PAR  = (uint32_t) source;
+    DMA2_Stream0->M0AR = (uint32_t) destination;
+
+    // Data transfer length
+    DMA2_Stream0->NDTR = (uint32_t) numberOfDatas;
+
+    // Enable stream
+    DMA2_Stream0->CR |= DMA_SxCR_EN;
 }
 
 void drawDiamond() {
@@ -188,6 +181,7 @@ void drawDiamond() {
 void TIM5_IRQHandler() {
     VEC_TIMER->SR &= ~(TIM_SR_UIF); // software has to clear this flag
 
+    /*
     // strobe shift register output latch
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
@@ -204,6 +198,7 @@ void TIM5_IRQHandler() {
     runDMA(Y_DMA_STREAM, &cubeVectorData1[i][1]);
     ++i;
     i %= ARRAY_SIZE;
+    */
 }
 
 void WWDG_IRQHandler(){}
@@ -222,17 +217,17 @@ int main(void) {
 
     configureGPIOs();
 
-    // Turn on clocks
-    RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
-    configureDMA(X_DMA_STREAM, cubeVectorData1, &X_SPI->DR);
-    configureDMA(Y_DMA_STREAM, cubeVectorData1, &Y_SPI->DR);
+    configureDMA();
 
     __enable_irq(); // Enable interrupts globally
+
+    runDMA(testDataSource, testDataDest, testDataSize);
 
     loadColor(0, 0, 0b000, 0b011, 0b10);
     drawDiamond();
 
     // initial calculation
+    rotateYCube(45);
     rotateZCube(45);
     calculateCubeVectorData(cubeVectorData1);
 
