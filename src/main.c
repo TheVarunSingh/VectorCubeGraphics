@@ -18,17 +18,6 @@
 #define X_DMA_STREAM    DMA1_Stream1
 #define Y_DMA_STREAM    DMA1_Stream2
 
-// Cube Vars
-const unsigned int CUBE_VECTOR_DATA_SIZE = 76; // words
-#define ARRAY_SIZE 38
-uint16_t cubeVectorData1[ARRAY_SIZE][2];
-uint16_t cubeVectorData2[ARRAY_SIZE][2];
-
-// Keyboard Input Vars
-volatile int newCommandAvailable = 0;
-volatile uint16_t lastCommand;
-volatile int currentData = 1;
-
 // Vector Data Bits
 #define NEG (1<<10)    // applies negative direction; for use with x or y data
 #define BLANK (1<<0)   // blanks current vector (i.e. makes it transparent); for use with z data
@@ -184,7 +173,20 @@ uint16_t z_x[5] = {0,80,NEG|80,80,40};
 uint16_t z_y[5] = {120,0,NEG|120,0,0};
 uint16_t z_z[5] = {BLANK,0,0,0,BLANK};
 
-/* Global Vector Vars */
+// Cube Vars
+const unsigned int CUBE_VECTOR_DATA_SIZE = 76; // words
+#define ARRAY_SIZE 38
+uint16_t cubeVectorData[2][ARRAY_SIZE];
+uint16_t cubeZData[38] = {0,0,0,0,0,0,0,0,0,0,
+                          0,0,0,0,0,0,0,0,0,0,
+                          0,0,0,0,0,0,0,0,0,0,
+                          0,0,0,0,0,0,0,0};
+
+// Keyboard Input Vars
+volatile int newCommandAvailable = 0;
+volatile uint16_t lastCommand;
+
+/* Vector Vars */
 // Buffer Struct
 #define BUFFER_SIZE 200
 typedef struct {
@@ -223,6 +225,8 @@ unsigned int blanked=0; // stores whether the previous vector was blanked
 uint16_t curr_x=0;
 uint16_t curr_y=0;
 uint16_t curr_z=0;
+// Buffer Switch Request
+unsigned int buffer_swap_req=0; // draw-er issues the request, and when comput-er is done calculating the next frame, the request is granted
 
 void swapBuffers() {
     if (buff_r==&buff_0_value) {
@@ -416,6 +420,7 @@ void fetchNextVector() {
     buff_r->read_index++;
     if (buff_r->read_index >= buff_r->top) {
         buff_r->read_index = 0;
+        buffer_swap_req=1; // draw-er makes the request
     }
 }
 
@@ -423,6 +428,8 @@ void fetchNextVector() {
 void TIM5_IRQHandler() {
     // Clear interrupt flag.
     VEC_TIMER->SR &= ~(TIM_SR_UIF);
+    // If we're waiting on the comput-er to finish the next frame, hold tight and wait
+    if (buffer_swap_req) return;
     // Output the previous vector's data by strobing shift reg latch.
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
@@ -451,7 +458,7 @@ void TIM5_IRQHandler() {
         while(!(Y_SPI->SR & SPI_SR_TXE));
         // And wait some more for the beam to finish moving
         // Lest we turn on the electron beam in the middle of jumping
-        delay_micros(DELAY_TIM, 100);
+        delay_micros(DELAY_TIM, 300);
         // Let's go through this again
         TIM5_IRQHandler();
         // Sure an SPI interrupt might save some time, but we can get away with this simplicity
@@ -485,6 +492,9 @@ void TIM5_IRQHandler() {
 
 void WWDG_IRQHandler(){}
 
+void staticImages() {
+    
+}
 int main(void) {
     configure84MHzClock();
 
@@ -517,14 +527,32 @@ int main(void) {
     addVectorsToBuffer(e_x,e_y,e_z,7);
     addVectorsToBuffer(r_x,r_y,r_z,7);
     addVectorsToBuffer(s_x,s_y,s_z,6);
+    addLoadToBuffer(512, 342, 0b011, 0b011, 0b0);
+    buff_w->anim_index=buff_w->top;
     swapBuffers();
+    // and regenerate it for second buffer
+    addLoadToBuffer(260, 602, 0b000, 0b100, 0b00);
+    addVectorsToBuffer(h_x,h_y,h_z,6);
+    addVectorsToBuffer(e_x,e_y,e_z,7);
+    addVectorsToBuffer(l_x,l_y,l_z,4);
+    addVectorsToBuffer(l_x,l_y,l_z,4);
+    addVectorsToBuffer(o_x,o_y,o_z,5);
+    addLoadToBuffer(185, 342, 0b011, 0b000, 0b00);
+    addVectorsToBuffer(g_x,g_y,g_z,8);
+    addVectorsToBuffer(a_x,a_y,a_z,7);
+    addVectorsToBuffer(m_x,m_y,m_z,5);
+    addVectorsToBuffer(e_x,e_y,e_z,7);
+    addVectorsToBuffer(r_x,r_y,r_z,7);
+    addVectorsToBuffer(s_x,s_y,s_z,6);
+    addLoadToBuffer(512, 342, 0b011, 0b011, 0b0);
+    buff_w->anim_index=buff_w->top;
 
     beginDrawing();
 
     // initial calculation
     rotateYCube(LEFT_CUBE,  45);
     rotateZCube(RIGHT_CUBE, 45);
-    calculateCubeVectorData(cubeVectorData1);
+    calculateCubeVectorData(cubeVectorData);
 
     // default to on to show signs of life
     digitalWrite(GPIOA, LED_PIN, 1);
@@ -552,7 +580,6 @@ int main(void) {
                 case ((uint16_t)'e'):
                     scaleCube(LEFT_CUBE,  0.99, 0.99, 0.99);
                     break;
-
                 case ((uint16_t)'i'):
                     rotateYCube(RIGHT_CUBE, 1);
                     break;
@@ -571,7 +598,6 @@ int main(void) {
                 case ((uint16_t)'o'):
                     scaleCube(RIGHT_CUBE, 0.99, 0.99, 0.99);
                     break;
-
                 case ((uint16_t)'v'):
                     togglePin(LED_GPIO, LED_PIN);
                     break;
@@ -579,16 +605,17 @@ int main(void) {
                     togglePin(LED_GPIO, LED_PIN);
                     break;
             }
-
-            if (currentData == 1) {
-                calculateCubeVectorData(cubeVectorData2);
-                currentData = 2;
-            } else {
-                calculateCubeVectorData(cubeVectorData1);
-                currentData = 1;
-            }
+            calculateCubeVectorData(cubeVectorData);
+        }
+        buff_w->top=buff_w->anim_index;
+        addVectorsToBuffer(cubeVectorData[0],cubeVectorData[1],cubeZData,38);
+        // if draw-er has requested the next buffer,
+        // the comput-er can now oblige that request
+        if (buffer_swap_req) {
+            buffer_swap_req=0;
+            swapBuffers();
+            beginDrawing();
         }
     }
-
     return 0;
 }

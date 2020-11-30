@@ -49,6 +49,6 @@ void scaleCube(int cube, float sx, float sy, float sz);
 void rotateXCube(int cube, int deg);
 void rotateYCube(int cube, int deg);
 void rotateZCube(int cube, int deg);
-void calculateCubeVectorData(uint16_t vectorData[38][2]);
+void calculateCubeVectorData(uint16_t vectorData[2][38]);
 
 #endif

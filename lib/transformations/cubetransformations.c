@@ -128,15 +128,15 @@ void calculateCubeVectorDataFloats() {
 }
 
 #define NEG (1<<10)
-void calculateCubeVectorData(uint16_t vectorData[38][2]) {
+void calculateCubeVectorData(uint16_t vectorData[2][38]) {
     calculateCubeVectorDataFloats();
     for (int i = 0; i < 38; ++i) {
         for (int j = 0; j < 2; ++j) {
             float val = 100 * cubeVectorDataFloats[i][j];
             if (val >= 0) {
-                vectorData[i][j] = (uint16_t)(val);
+                vectorData[j][i] = (uint16_t)(val);
             } else {
-                vectorData[i][j] = NEG|((uint16_t)(-val));
+                vectorData[j][i] = NEG|((uint16_t)(-val));
             }
         }
     }
