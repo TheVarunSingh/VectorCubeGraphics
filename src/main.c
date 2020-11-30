@@ -9,8 +9,8 @@
 #include "spi.h"
 #include "vec_gen.h"
 
-#define LED_GPIO GPIOA
-#define LED_PIN GPIO_PA5
+#define LED_GPIO GPIOB
+#define LED_PIN GPIO_PB10
 
 #define DELAY_TIM       TIM3
 #define VEC_MASTER_CLK  TIM4
@@ -20,8 +20,8 @@
 #define X_DMA_STREAM    DMA1_Stream1
 #define Y_DMA_STREAM    DMA1_Stream2
 
-const unsigned int CUBE_VECTOR_DATA_SIZE = 38; // words
-#define ARRAY_SIZE 19
+const unsigned int CUBE_VECTOR_DATA_SIZE = 76; // words
+#define ARRAY_SIZE 38
 uint16_t cubeVectorData1[ARRAY_SIZE][2];
 uint16_t cubeVectorData2[ARRAY_SIZE][2];
 
@@ -227,8 +227,8 @@ int main(void) {
     drawDiamond();
 
     // initial calculation
-    rotateYCube(45);
-    rotateZCube(45);
+    rotateYCube(LEFT_CUBE,  45);
+    rotateZCube(RIGHT_CUBE, 45);
     calculateCubeVectorData(cubeVectorData1);
 
     // default to on to show signs of life
@@ -240,41 +240,41 @@ int main(void) {
 
             switch (lastCommand) {
                 case ((uint16_t)'w'):
-                    rotateYCube(1);
+                    rotateYCube(LEFT_CUBE,  1);
                     break;
                 case ((uint16_t)'s'):
-                    rotateYCube(-1);
+                    rotateYCube(LEFT_CUBE,  -1);
                     break;
                 case ((uint16_t)'a'):
-                    rotateZCube(1);
+                    rotateZCube(LEFT_CUBE,  1);
                     break;
                 case ((uint16_t)'d'):
-                    rotateZCube(-1);
+                    rotateZCube(LEFT_CUBE,  -1);
                     break;
                 case ((uint16_t)'q'):
-                    scaleCube(1.01, 1.01, 1.01);
+                    scaleCube(LEFT_CUBE,  1.01, 1.01, 1.01);
                     break;
                 case ((uint16_t)'e'):
-                    scaleCube(0.99, 0.99, 0.99);
+                    scaleCube(LEFT_CUBE,  0.99, 0.99, 0.99);
                     break;
 
                 case ((uint16_t)'i'):
-                    rotateYCube(1);
+                    rotateYCube(RIGHT_CUBE, 1);
                     break;
                 case ((uint16_t)'k'):
-                    rotateYCube(-1);
+                    rotateYCube(RIGHT_CUBE, -1);
                     break;
                 case ((uint16_t)'j'):
-                    rotateZCube(1);
+                    rotateZCube(RIGHT_CUBE, 1);
                     break;
                 case ((uint16_t)'l'):
-                    rotateZCube(-1);
+                    rotateZCube(RIGHT_CUBE, -1);
                     break;
                 case ((uint16_t)'u'):
-                    scaleCube(1.01, 1.01, 1.01);
+                    scaleCube(RIGHT_CUBE, 1.01, 1.01, 1.01);
                     break;
                 case ((uint16_t)'o'):
-                    scaleCube(0.99, 0.99, 0.99);
+                    scaleCube(RIGHT_CUBE, 0.99, 0.99, 0.99);
                     break;
 
                 case ((uint16_t)'v'):

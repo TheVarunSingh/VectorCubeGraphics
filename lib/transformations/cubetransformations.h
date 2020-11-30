@@ -4,6 +4,9 @@
 #include "transformations.h"
 #include <stdint.h>
 
+#define LEFT_CUBE   0
+#define RIGHT_CUBE  1
+
 static const int FRONT_RIGHT_UP_IDX    = 0;
 static const int FRONT_RIGHT_DOWN_IDX  = 1;
 static const int FRONT_LEFT_DOWN_IDX   = 2;
@@ -15,26 +18,37 @@ static const int BACK_RIGHT_UP_IDX     = 7;
 
 static const float origin[4] = {0, 0, 0, 1};
 
-static float cubeVertices[8][4] = {
-    { 1,  1,  1,  1},
-    { 1,  1, -1,  1},
-    { 1, -1, -1,  1},
+static float leftCubeVertices[8][4] = {
     { 1, -1,  1,  1},
-    {-1, -1,  1,  1},
+    { 1, -1, -1,  1},
+    { 1, -3, -1,  1},
+    { 1, -3,  1,  1},
+    {-1, -3,  1,  1},
+    {-1, -3, -1,  1},
     {-1, -1, -1,  1},
-    {-1,  1, -1,  1},
-    {-1,  1,  1,  1}
+    {-1, -1,  1,  1}
 };
 
-static float cubeEdges[19][4];
+static float rightCubeVertices[8][4] = {
+    { 1,  3,  1,  1},
+    { 1,  3, -1,  1},
+    { 1,  1, -1,  1},
+    { 1,  1,  1,  1},
+    {-1,  1,  1,  1},
+    {-1,  1, -1,  1},
+    {-1,  3, -1,  1},
+    {-1,  3,  1,  1}
+};
 
-static float cubeVectorDataFloats[19][2];
+static float cubeEdges[38][4];
 
-void translateCube(float tx, float ty, float tz);
-void scaleCube(float sx, float sy, float sz);
-void rotateXCube(int deg);
-void rotateYCube(int deg);
-void rotateZCube(int deg);
-void calculateCubeVectorData(uint16_t vectorData[19][2]);
+static float cubeVectorDataFloats[38][2];
+
+void translateCube(int cube, float tx, float ty, float tz);
+void scaleCube(int cube, float sx, float sy, float sz);
+void rotateXCube(int cube, int deg);
+void rotateYCube(int cube, int deg);
+void rotateZCube(int cube, int deg);
+void calculateCubeVectorData(uint16_t vectorData[38][2]);
 
 #endif
