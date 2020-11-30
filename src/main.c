@@ -9,8 +9,8 @@
 #include "spi.h"
 #include "vec_gen.h"
 
-#define LED_GPIO GPIOB
-#define LED_PIN GPIO_PB10
+#define LED_GPIO GPIOA
+#define LED_PIN GPIO_PA5
 
 #define DELAY_TIM       TIM3
 #define VEC_MASTER_CLK  TIM4
@@ -251,13 +251,36 @@ int main(void) {
                 case ((uint16_t)'d'):
                     rotateZCube(-1);
                     break;
+                case ((uint16_t)'q'):
+                    scaleCube(1.01, 1.01, 1.01);
+                    break;
+                case ((uint16_t)'e'):
+                    scaleCube(0.99, 0.99, 0.99);
+                    break;
+
                 case ((uint16_t)'i'):
-                    digitalWrite(LED_GPIO, LED_PIN, 1);
+                    rotateYCube(1);
                     break;
                 case ((uint16_t)'k'):
-                    digitalWrite(LED_GPIO, LED_PIN, 0);
+                    rotateYCube(-1);
                     break;
                 case ((uint16_t)'j'):
+                    rotateZCube(1);
+                    break;
+                case ((uint16_t)'l'):
+                    rotateZCube(-1);
+                    break;
+                case ((uint16_t)'u'):
+                    scaleCube(1.01, 1.01, 1.01);
+                    break;
+                case ((uint16_t)'o'):
+                    scaleCube(0.99, 0.99, 0.99);
+                    break;
+
+                case ((uint16_t)'v'):
+                    togglePin(LED_GPIO, LED_PIN);
+                    break;
+                case ((uint16_t)'n'):
                     togglePin(LED_GPIO, LED_PIN);
                     break;
             }

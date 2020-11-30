@@ -1,7 +1,8 @@
 import msvcrt
 import serial
 
-VALID_CHARS = [b'w', b'a', b's', b'd', b'i', b'k', b'j']
+VALID_CHARS = "wasdqeijkluovn"
+QUIT_CHARS = "b"
 
 ser = serial.Serial(
     port='COM7',
@@ -16,12 +17,14 @@ print("Opening serial port", ser.name)
 
 while True:
     if msvcrt.kbhit():
-        char = msvcrt.getch()
+        char = msvcrt.getch().decode('utf-8')
 
         if char in VALID_CHARS:
-            ser.write(char)
+            print("You pressed:", char)
+            ser.write(char.encode('utf-8'))
 
-        if char == b'q':
-            print('Quitting and closing serial port')
+        else if char in QUIT_CHARS:
+            print("Bye bye! See you next time!")
+            print("Quitting and closing serial port", ser.name)
             ser.close()
             break

@@ -1,7 +1,8 @@
 import getch # you can install this with pip
 import serial
 
-VALID_CHARS = ['w', 'a', 's', 'd', 'i', 'k', 'j']
+VALID_CHARS = "wasdqeijkluovn"
+QUIT_CHARS = "b"
 
 ser = serial.Serial(
     port='/dev/ttyACM1',
@@ -18,10 +19,11 @@ while True:
     char = getch.getch()
 
     if char in VALID_CHARS:
-        print("Sending ",char)
-        ser.write(char.encode())
+        print("You pressed:", char)
+        ser.write(char.encode('utf-8'))
 
-    if char == 'q':
-        print('Quitting and closing serial port')
+    if char in QUIT_CHARS:
+        print("Bye bye! See you next time!")
+        print("Quitting and closing serial port", ser.name)
         ser.close()
         break
