@@ -199,7 +199,9 @@ void TIM5_IRQHandler() {
 
     //uint16_t** array = (currentData==1) ? cubeVectorData1 : cubeVectorData2;
     // and while we're drawing the current vector, let's start loading in the next one
-    doubleSendSPI(X_SPI, Y_SPI, cubeVectorData1[i][0], cubeVectorData1[i][1]);
+    //doubleSendSPI(X_SPI, Y_SPI, cubeVectorData1[i][0], cubeVectorData1[i][1]);
+    runDMA(X_DMA_STREAM, &cubeVectorData1[i][0]);
+    runDMA(Y_DMA_STREAM, &cubeVectorData1[i][1]);
     ++i;
     i %= ARRAY_SIZE;
 }
@@ -220,8 +222,10 @@ int main(void) {
 
     configureGPIOs();
 
-    //configureDMA(X_DMA, &x_array, &X_SPI->DR);
-    //configureDMA(Y_DMA, &y_array, &Y_SPI->DR);
+    // Turn on clocks
+    RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+    configureDMA(X_DMA_STREAM, cubeVectorData1, &X_SPI->DR);
+    configureDMA(Y_DMA_STREAM, cubeVectorData1, &Y_SPI->DR);
 
     __enable_irq(); // Enable interrupts globally
 
