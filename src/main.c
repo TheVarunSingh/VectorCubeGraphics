@@ -34,6 +34,9 @@ volatile int currentData = 1;
 uint16_t testDataSize = 6;
 uint16_t testDataSource[6] = {101, 102, 103, 104, 105, 106};
 uint16_t testDataDest[6] = {4,5,6,7,8,9};
+uint16_t testDataSource2[6] = {201, 202, 203, 204, 205, 206};
+uint16_t testDataDest2[6] = {14,15,16,17,18,19};
+
 
 // Vector Data Bits
 #define NEG (1<<10)    // applies negative direction; for use with x or y data
@@ -232,18 +235,18 @@ void addLoad(uint16_t x_pos, uint16_t y_pos, unsigned int red, unsigned int gree
 
 void swapBuffers() {
     if (x_d_buffer==x_buffer0) {
-        x_d_buffer=x_buffer1; 
-        y_d_buffer=y_buffer1; 
-        z_d_buffer=z_buffer1; 
+        x_d_buffer=x_buffer1;
+        y_d_buffer=y_buffer1;
+        z_d_buffer=z_buffer1;
         x_w_buffer=x_buffer0;
-        y_w_buffer=y_buffer0; 
+        y_w_buffer=y_buffer0;
         z_w_buffer=z_buffer0;
     } else {
-        x_d_buffer=x_buffer0; 
-        y_d_buffer=y_buffer0; 
-        z_d_buffer=z_buffer0; 
+        x_d_buffer=x_buffer0;
+        y_d_buffer=y_buffer0;
+        z_d_buffer=z_buffer0;
         x_w_buffer=x_buffer1;
-        y_w_buffer=y_buffer1; 
+        y_w_buffer=y_buffer1;
         z_w_buffer=z_buffer1;
     }
     d_last = w_index;
@@ -365,6 +368,10 @@ void runDMA(uint16_t * source, uint16_t * destination, uint32_t numberOfDatas) {
     DMA2_Stream0->CR &= ~DMA_SxCR_EN;
     while (DMA2_Stream0->CR & DMA_SxCR_EN_Msk); // wait until stream is off
 
+    // Clear interrupt flags
+    DMA2->LIFCR |= 0b00001111011111010000111101111101;
+    DMA2->HIFCR |= 0b00001111011111010000111101111101;
+
     // Configure source and destination
     DMA2_Stream0->PAR  = (uint32_t) source;
     DMA2_Stream0->M0AR = (uint32_t) destination;
@@ -444,7 +451,7 @@ void TIM5_IRQHandler() {
         delay_micros(DELAY_TIM, 100);
         // Let's go through this again
         TIM5_IRQHandler();
-        // Sure an SPI interrupt might save some time, but we can get away with this simplicity 
+        // Sure an SPI interrupt might save some time, but we can get away with this simplicity
         // because absolute position loads are pretty infrequent.
     } else {
         // Run BRM's to draw a line
@@ -493,6 +500,7 @@ int main(void) {
     __enable_irq(); // Enable interrupts globally
 
     runDMA(testDataSource, testDataDest, testDataSize);
+    runDMA(testDataSource2, testDataDest2, testDataSize);
 
     // generate test image
     addLoad(260, 602, 0b000, 0b100, 0b00);
@@ -541,7 +549,7 @@ int main(void) {
     runDMA(s_y,&y_w_buffer[w_index],6);
     runDMA(s_z,&z_w_buffer[w_index],6);
     w_index+=6;
-    
+
     swapBuffers();
 
     beginDrawing();
