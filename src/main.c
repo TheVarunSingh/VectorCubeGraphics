@@ -391,7 +391,7 @@ void addLoadToBuffer(uint16_t x_pos, uint16_t y_pos, unsigned int red, unsigned 
     buff_w->x[buff_w->top] = ((green<<14) | (blue<<12) | x_pos);
     buff_w->y[buff_w->top] = ((red<<13) | ((green>>2)<<12) | y_pos);
     // write software control data
-    buff_w->z[buff_w->top] = LD_COL | LD_POS;
+    buff_w->z[buff_w->top] = LD_COL | LD_POS | BLANK;
     // increment allocated space
     buff_w->top++;
 }
@@ -406,7 +406,7 @@ void beginDrawing() {
     VEC_TIMER->DIER |= TIM_DIER_UIE;
     // since we aren't drawing a vector yet, we need to manually ensure the data have time to be loaded in,
     // and set CCR1 so that GOb never activates
-    generateDuration(VEC_TIMER, 300, 300);
+    generateDuration(VEC_TIMER, 600, 600);
 }
 
 void fetchNextVector() {
@@ -443,7 +443,8 @@ void TIM5_IRQHandler() {
         digitalWrite(GPIOA, COUNT_LDb, GPIO_LOW);
         digitalWrite(GPIOA, COUNT_LDb, GPIO_HIGH);
         fetchNextVector();
-        // By default, let's always add color unless we're blanking the vector
+        // By default, let's add the color unless we're blanking
+        // (no we don't show color for the load, but we might want it ready in the latches for the next vector)
         if (!(curr_z&BLANK)) {
             curr_x |= x_color<<12;
             curr_y |= y_color<<12;
@@ -490,7 +491,7 @@ void TIM5_IRQHandler() {
 void WWDG_IRQHandler(){}
 
 void staticImages() {
-    addLoadToBuffer(260, 800, 0b000, 0b010, 0b10);
+    addLoadToBuffer(260, 800, 0b000, 0b100, 0b10);
     addVectorsToBuffer(h_x,h_y,h_z,6);
     addVectorsToBuffer(e_x,e_y,e_z,7);
     addVectorsToBuffer(l_x,l_y,l_z,4);
@@ -534,8 +535,10 @@ int main(void) {
     beginDrawing();
 
     // initial calculation
-    rotateYCube(LEFT_CUBE,  15);
-    rotateZCube(RIGHT_CUBE, 75);
+    rotateZCube(LEFT_CUBE, 45);
+    rotateZCube(RIGHT_CUBE,45);
+    rotateYCube(LEFT_CUBE, 45);
+    rotateYCube(RIGHT_CUBE,45);
     calculateCubeVectorData(cubeVectorData);
 
     // default to on to show signs of life
@@ -592,9 +595,9 @@ int main(void) {
             calculateCubeVectorData(cubeVectorData);
         }
         buff_w->top=buff_w->anim_index;
-        addLoadToBuffer(512, 450, 0b010, 0b010, 0b00);
+        addLoadToBuffer(512, 450, 0b010, 0b100, 0b00);
         addVectorsToBuffer(cubeVectorData[0],cubeVectorData[1],cubeZData,19);
-        addLoadToBuffer(512, 450, 0b000, 0b000, 0b11);
+        addLoadToBuffer(512, 450, 0b011, 0b011, 0b00);
         addVectorsToBuffer(&cubeVectorData[0][19],&cubeVectorData[1][19],cubeZData,19);
         // if draw-er has requested the next buffer,
         // the comput-er can now oblige that request
