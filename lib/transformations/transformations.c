@@ -144,7 +144,8 @@ void normalizeHomogenousCoordinates(float coordinates[4]) {
 
 // https://en.wikipedia.org/wiki/Orthographic_projection
 void projectOrthogonally(float homogenousCoordinates[4], float xyCoordinates[2]) {
+    // project onto the Y-Z plane
     normalizeHomogenousCoordinates(homogenousCoordinates);
-    xyCoordinates[0] = homogenousCoordinates[0];
-    xyCoordinates[1] = homogenousCoordinates[1];
+    xyCoordinates[0] = homogenousCoordinates[1];
+    xyCoordinates[1] = homogenousCoordinates[2];
 }
