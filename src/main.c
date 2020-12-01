@@ -177,10 +177,12 @@ uint16_t z_z[5] = {BLANK,0,0,0,BLANK};
 const unsigned int CUBE_VECTOR_DATA_SIZE = 76; // words
 #define ARRAY_SIZE 38
 uint16_t cubeVectorData[2][ARRAY_SIZE];
-uint16_t cubeZData[38] = {BLANK,BLANK,0,0,0,0,0,0,0,0,
-                          0,0,0,0,0,0,0,0,0,0,
-                          0,0,0,0,0,0,0,0,0,0,
-                          BLANK,0,BLANK,0,BLANK,0,BLANK,BLANK};
+uint16_t cubeZData[38] = {
+    BLANK, BLANK, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, BLANK, 0, BLANK, 0, BLANK, 0, BLANK, BLANK, BLANK,
+    BLANK, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    BLANK, 0, BLANK, 0, BLANK, 0, BLANK, BLANK
+};
 
 // Keyboard Input Vars
 volatile int newCommandAvailable = 0;
@@ -286,6 +288,7 @@ void configureGPIOs() {
 
     pinMode(GPIOA, GPIO_PA4, GPIO_OUTPUT); // COUNT_LDb (blue wire)
     pinMode(GPIOA, GPIO_PA8, GPIO_OUTPUT); // COLOR_LD (yellow wire)
+    pinMode(GPIOB, GPIO_PB4, GPIO_OUTPUT); // BLANKb (dark green wire)
 
     alternateFunctionMode(GPIOA, GPIO_PA5, 5);  // X_SHIFT_REG_CLK  (orange wire) alt func SPI1_SCK
     pinMode(GPIOA, GPIO_PA6, GPIO_OUTPUT);      // X_SHIFT_REG_LD   (red wire)
@@ -433,22 +436,21 @@ void TIM5_IRQHandler() {
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_LOW);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
     // Apply control signals for previous vector.
-    //   Strobe color latch if we need to.
     //   By default, let's always apply color.
     digitalWrite(GPIOA, COLOR_LD, GPIO_HIGH);
     digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
     //   Strobe counter parallel load if we need to (moves beam to absolute position)
     if (curr_z & LD_POS) {
-        // If so, strobe the counter parallel load.
+        // Blank colors no matter what
+        blanked=1;
+        digitalWrite(GPIOB, BLANKb,GPIO_LOW);
+        // Strobe the counter parallel load
         digitalWrite(GPIOA, COUNT_LDb, GPIO_LOW);
         digitalWrite(GPIOA, COUNT_LDb, GPIO_HIGH);
         fetchNextVector();
-        // By default, let's add the color unless we're blanking
-        // (no we don't show color for the load, but we might want it ready in the latches for the next vector)
-        if (!(curr_z&BLANK)) {
-            curr_x |= x_color<<12;
-            curr_y |= y_color<<12;
-        }
+        // Add color (for next vector)
+        curr_x |= x_color<<12;
+        curr_y |= y_color<<12;
         // Send out next vector
         X_SPI->DR = curr_x;
         Y_SPI->DR = curr_y;
@@ -462,6 +464,12 @@ void TIM5_IRQHandler() {
         // Sure an SPI interrupt might save some time, but we can get away with this simplicity
         // because absolute position loads are pretty infrequent.
     } else {
+        // Blank colors if we need to
+        if (curr_z&BLANK) {
+            digitalWrite(GPIOB,BLANKb,GPIO_LOW);
+        } else {
+            digitalWrite(GPIOB,BLANKb,GPIO_HIGH);
+        }
         // Run BRM's to draw a line
         generateDuration(VEC_TIMER, 1028, 5);
         // yes we are counting on the rest of this function to run before this duration times up

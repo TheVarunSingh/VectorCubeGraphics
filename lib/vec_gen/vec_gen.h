@@ -9,16 +9,17 @@
 // Port Definitions
 //   Note: suffix of "b" stands for "bar", i.e. an active-low signal
 ///////////////////////////////////////////////////////////////////////////////
-#define VEC_CLK           GPIO_PB6  // white wire  (port B)
-#define GOb               GPIO_PA0  // green wire  (port A)
-#define COUNT_LDb         GPIO_PA4  // blue wire   (port A)
-#define COLOR_LD          GPIO_PA8  // yellow wire (port A)
-#define X_SHIFT_REG_CLK   GPIO_PA5  // orange wire (port A)
-#define X_SHIFT_REG_LD    GPIO_PA6  // red wire    (port A)
-#define X_SHIFT_REG_DATA  GPIO_PA7  // brown wire  (port A)
-#define Y_SHIFT_REG_CLK   GPIO_PC10 // orange wire (port C)
-#define Y_SHIFT_REG_LD    GPIO_PC11 // red wire    (port C)
-#define Y_SHIFT_REG_DATA  GPIO_PC12 // brown wire  (port C)
+#define VEC_CLK           GPIO_PB6  // white wire
+#define GOb               GPIO_PA0  // green wire
+#define COUNT_LDb         GPIO_PA4  // blue wire
+#define COLOR_LD          GPIO_PA8  // yellow wire
+#define BLANKb            GPIO_PB4  // dark green wire
+#define X_SHIFT_REG_CLK   GPIO_PA5  // orange wire
+#define X_SHIFT_REG_LD    GPIO_PA6  // red wire
+#define X_SHIFT_REG_DATA  GPIO_PA7  // brown wire
+#define Y_SHIFT_REG_CLK   GPIO_PC10 // orange wire
+#define Y_SHIFT_REG_LD    GPIO_PC11 // red wire
+#define Y_SHIFT_REG_DATA  GPIO_PC12 // brown wire
 
 ///////////////////////////////////////////////////////////////////////////////
 // Peripheral Assignments
