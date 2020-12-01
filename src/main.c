@@ -409,7 +409,7 @@ void beginDrawing() {
     VEC_TIMER->DIER |= TIM_DIER_UIE;
     // since we aren't drawing a vector yet, we need to manually ensure the data have time to be loaded in,
     // and set CCR1 so that GOb never activates
-    generateDuration(VEC_TIMER, 300, 300);
+    generateDuration(VEC_TIMER, 100, 100);
 }
 
 void fetchNextVector() {
@@ -458,7 +458,7 @@ void TIM5_IRQHandler() {
         while(!(Y_SPI->SR & SPI_SR_TXE));
         // And wait some more for the beam to finish moving
         // Lest we turn on the electron beam in the middle of jumping
-        delay_micros(DELAY_TIM, 70);
+        delay_micros(DELAY_TIM, 100);
         // Let's go through this again
         TIM5_IRQHandler();
         // Sure an SPI interrupt might save some time, but we can get away with this simplicity
