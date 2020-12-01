@@ -67,14 +67,18 @@ void subtractCubeVertices(int cube, int idx1, int idx2, float result[4]) {
         float weight1 = idx1 < 0 ? origin[3] : leftCubeVertices[idx1][3];
         float weight2 = idx2 < 0 ? origin[3] : leftCubeVertices[idx2][3];
         for (int i = 0; i < 3; ++i) {
-            result[i] = weight2 * leftCubeVertices[idx1][i] - weight1 * leftCubeVertices[idx2][i];
+            float a = idx1 < 0 ? origin[i] : leftCubeVertices[idx1][i];
+            float b = idx2 < 0 ? origin[i] : leftCubeVertices[idx2][i];
+            result[i] = weight2 * a - weight1 * b;
         }
         result[3] = weight1 * weight2;
     } else {
         float weight1 = idx1 < 0 ? origin[3] : rightCubeVertices[idx1][3];
         float weight2 = idx2 < 0 ? origin[3] : rightCubeVertices[idx2][3];
         for (int i = 0; i < 3; ++i) {
-            result[i] = weight2 * rightCubeVertices[idx1][i] - weight1 * rightCubeVertices[idx2][i];
+            float a = idx1 < 0 ? origin[i] : rightCubeVertices[idx1][i];
+            float b = idx2 < 0 ? origin[i] : rightCubeVertices[idx2][i];
+            result[i] = weight2 * a - weight1 * b;
         }
         result[3] = weight1 * weight2;
     }
