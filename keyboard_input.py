@@ -6,7 +6,7 @@ if "win32" in platform:
     the_port='COM7'
 else:
     import getch
-    the_port='/dev/ttyACM1'
+    the_port='/dev/ttyACM0'
 
 VALID_CHARS = "wasdqeijkluovn"
 QUIT_CHARS = "b"

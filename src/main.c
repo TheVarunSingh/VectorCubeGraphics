@@ -5,11 +5,23 @@
 #include "cubetransformations.h"
 #include "timers.h"
 #include "spi.h"
-#include "vec_gen.h"
 
+/* Pin Assignments */
 #define LED_GPIO GPIOB
 #define LED_PIN GPIO_PB10
+#define VEC_CLK           GPIO_PB6  // white wire
+#define GOb               GPIO_PA0  // green wire
+#define COUNT_LDb         GPIO_PA4  // blue wire
+#define COLOR_LD          GPIO_PA8  // yellow wire
+#define BLANKb            GPIO_PB4  // dark green wire
+#define X_SHIFT_REG_CLK   GPIO_PA5  // orange wire
+#define X_SHIFT_REG_LD    GPIO_PA6  // red wire
+#define X_SHIFT_REG_DATA  GPIO_PA7  // brown wire
+#define Y_SHIFT_REG_CLK   GPIO_PC10 // orange wire
+#define Y_SHIFT_REG_LD    GPIO_PC11 // red wire
+#define Y_SHIFT_REG_DATA  GPIO_PC12 // brown wire
 
+/* Peripheral Assignments */
 #define DELAY_TIM       TIM3
 #define VEC_MASTER_CLK  TIM4
 #define VEC_TIMER       TIM5
@@ -17,14 +29,60 @@
 #define Y_DMA           DMA1
 #define X_DMA_STREAM    DMA1_Stream1
 #define Y_DMA_STREAM    DMA1_Stream2
+#define X_SPI SPI1
+#define Y_SPI SPI3
 
-// Vector Data Bits
+/* Global Vector Vars */
+// Bits
 #define NEG (1<<10)    // applies negative direction; for use with x or y data
 #define BLANK (1<<0)   // blanks current vector (i.e. makes it transparent); for use with z data
 #define LD_COL (1<<1)  // loads new color data; for use with z data
 #define LD_POS (1<<2) // loads new absolute position; for use with z data
+// Buffer Struct
+#define BUFFER_SIZE 200
+typedef struct {
+    uint16_t x[BUFFER_SIZE]; // stores x data to be sent to hardware
+    uint16_t y[BUFFER_SIZE]; // stores y data to be sent to hardware
+    uint16_t z[BUFFER_SIZE]; // stores software controls
+    unsigned int top;        // points to where the first free chunk of memory is
+    unsigned int anim_index; // points to the first vector of the first animated object is (used in write mode)
+    unsigned int read_index; // points to where the first unread vector is (used in read mode)
+    //
+    // Here's a picture to visualize (not to scale).
+    //
+    //                X           Y         Z
+    //           0 --------    --------    ----
+    //             (vector data that does often
+    //              not change frame to frame)
+    //  anim_index --------    --------    ----
+    //             (vector data that does often 
+    //              change frame to frame)
+    //         top --------    --------    ----
+    //             (unusued memory)
+    // BUFFER_SIZE --------    --------    ----
+    //
+} vector_buffer;
+// Actual Buffers
+vector_buffer buff_0_value; // value as in not a pointer
+vector_buffer buff_1_value;
+// Aliases to Actual Buffers
+vector_buffer* buff_r = &buff_0_value; // r for currently being read from (and drawn to screen)
+vector_buffer* buff_w = &buff_1_value; // w for currently being written
+// Color State
+uint8_t x_color=0; // current color
+uint8_t y_color=0; 
+// Current Instruction Being Drawn to Screen
+uint16_t curr_x=0;
+uint16_t curr_y=0;
+uint16_t curr_z=0;
+// Buffer Switch Request
+unsigned int buffer_swap_req=0; // draw-er (TIM5_IRQHandler) issues the request
+                                // and when comput-er (main loop) is done calculating the next frame, 
+                                // the request is granted
+unsigned int drawer_halted=0; // lets the comput-er know if it needs to restart the draw-er
+                              // when a buffer swap is performed
 
-/* Font */
+/* Font Data (translated from Atari Gravitar ROM data) */
 uint16_t space_x[1] = {120};
 uint16_t space_y[1] = {0};
 uint16_t space_z[1] = {0};
@@ -188,149 +246,89 @@ uint16_t cubeZData[38] = {
 volatile int newCommandAvailable = 0;
 volatile uint16_t lastCommand;
 
-/* Vector Vars */
-// Buffer Struct
-#define BUFFER_SIZE 200
-typedef struct {
-    uint16_t x[BUFFER_SIZE]; // stores x data to be sent to hardware
-    uint16_t y[BUFFER_SIZE]; // stores y data to be sent to hardware
-    uint16_t z[BUFFER_SIZE]; // stores software controls
-    unsigned int top;        // points to where the first free chunk of memory is
-    unsigned int anim_index; // points to the first vector of the first animated object is (used in write mode)
-    unsigned int read_index; // points to where the first unread vector is (used in read mode)
-    //
-    // Here's a picture to visualize (not to scale).
-    //
-    //                X           Y         Z
-    //           0 --------    --------    ----
-    //             (vector data that does often
-    //              not change frame to frame)
-    //  anim_index --------    --------    ----
-    //             (vector data that does often 
-    //              change frame to frame)
-    //         top --------    --------    ----
-    //             (unusued memory)
-    // BUFFER_SIZE --------    --------    ----
-    //
-} vector_buffer;
-// Actual Buffers
-vector_buffer buff_0_value; // value as in not a pointer
-vector_buffer buff_1_value;
-// Aliases to Actual Buffers
-vector_buffer* buff_r = &buff_0_value; // r for currently being read from (and drawn to screen)
-vector_buffer* buff_w = &buff_1_value; // w for currently being written
-// Color State
-uint8_t x_color=0; // current color
-uint8_t y_color=0; 
-unsigned int blanked=0; // stores whether the previous vector was blanked
-// Current Instruction Being Drawn to Screen
-uint16_t curr_x=0;
-uint16_t curr_y=0;
-uint16_t curr_z=0;
-// Buffer Switch Request
-unsigned int buffer_swap_req=0; // draw-er issues the request, and when comput-er is done calculating the next frame, the request is granted
+///////////////////////////////////////////////////////////////////////////////
+// Configuration Functions
+///////////////////////////////////////////////////////////////////////////////
 
-void swapBuffers() {
-    if (buff_r==&buff_0_value) {
-        buff_r = &buff_1_value;
-        buff_w = &buff_0_value;
-    } else {
-        buff_r = &buff_0_value;
-        buff_w = &buff_1_value;
-    }
-    buff_r->read_index=0;
-    buff_w->top=buff_w->anim_index; // we consider anything that needs to be animated as unwritten to begin with
-}
-
-void USART2_IRQHandler() {
-    if (USART2->SR | USART_SR_RXNE) {
-        uint16_t message = USART2->DR;
-        lastCommand = message;
-        newCommandAvailable = 1;
-    }
+void configureGPIOs() {
+    // Enable clock to GPIOs
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+    // Timer Signals
+    alternateFunctionMode(GPIOB, GPIO_PB6, 2); // VEC_CLK (white wire) alt func VEC_CLK_CH1
+    alternateFunctionMode(GPIOA, GPIO_PA0, 2); // GOb (green wire) alt func VEC_TIMER_CH1
+    // USART2 GPIOA Signals
+    alternateFunctionMode(GPIOA, GPIO_PA2, 7);
+    alternateFunctionMode(GPIOA, GPIO_PA3, 7);
+    // Miscellaneous Controls
+    pinMode(GPIOA, GPIO_PA4, GPIO_OUTPUT); // COUNT_LDb (blue wire)
+    pinMode(GPIOA, GPIO_PA8, GPIO_OUTPUT); // COLOR_LD (yellow wire)
+    pinMode(GPIOB, GPIO_PB4, GPIO_OUTPUT); // BLANKb (dark green wire)
+    // X SPI Signals
+    alternateFunctionMode(GPIOA, GPIO_PA5, 5);  // X_SHIFT_REG_CLK  (orange wire) alt func SPI1_SCK
+    pinMode(GPIOA, GPIO_PA6, GPIO_OUTPUT);      // X_SHIFT_REG_LD   (red wire)
+    alternateFunctionMode(GPIOA, GPIO_PA7, 5);  // X_SHIFT_REG_DATA (brown wire)  alt func SPI1_MOSI
+    // Y SPI signals
+    alternateFunctionMode(GPIOC, GPIO_PC10, 6); // Y_SHIFT_REG_CLK  (orange wire) alt func SPI3_SCK
+    pinMode(GPIOC, GPIO_PC11, GPIO_OUTPUT);     // Y_SHIFT_REG_LD   (red wire)
+    alternateFunctionMode(GPIOC, GPIO_PC12, 6); // Y_SHIFT_REG_DATA (brown wire)  alt func SPI3_MOSI
+    // external debugging LED
+    pinMode(LED_GPIO, LED_PIN, GPIO_OUTPUT);
 }
 
 void configureDelayTimer() {
+    // Enable clock to timer 3
     RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+    // Configure timer 3
     configureTimer(TIM3);
 }
 
-void configureUSART2() {
-    RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+void configureVectorTimers() {
+    // Enable clock to timers
+    RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
+    RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
+    // Configure VEC_CLK Timer as a master clock
+    configureCaptureCompare(VEC_MASTER_CLK);
+    configurePWM(VEC_MASTER_CLK, 1);
+    generatePWMfreq(VEC_MASTER_CLK, 10000000U, 2U);
+    // Configure VEC_TIMER Timer for controlling GOb
+    // as a function of the number of pulses that VEC_CLK makes
+    configureCaptureCompare(VEC_TIMER);
+    configureDuration(VEC_TIMER, 0, 1, 0b010);
+    VEC_TIMER->DIER |= TIM_DIER_UIE; // enable interrupt req. upon updating
+    NVIC_EnableIRQ(TIM5_IRQn); // enable the interrupt itself; we use it to feed new vectors
+}
 
+void configureUSART2() {
+    // Enable clock to USART 2
+    RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+    // Config Registers
     USART2->CR1 |= (USART_CR1_UE); // Enable USART
     USART2->CR1 &= ~(USART_CR1_M); // M=0 corresponds to 8 data bits
     USART2->CR2 &= ~(USART_CR2_STOP); // 0b00 corresponds to 1 stop bit
     USART2->CR1 &= ~(USART_CR1_OVER8); // Set to 16 times sampling freq
-
+    // Baud Rate Register
     USART2->BRR |= (45 << USART_BRR_DIV_Mantissa_Pos);
     USART2->BRR |= (0b1001 << USART_BRR_DIV_Fraction_Pos); // 9/16
-
-    USART2->CR1 |= (USART_CR1_RXNEIE); // Enable the receive interrupt
+    // Interrupts
+    USART2->CR1 |= (USART_CR1_RXNEIE); // Enable the receive interrupt req
+    NVIC_EnableIRQ(USART2_IRQn); // Enable the actual receiver interrupt
+    // Turn it on
     USART2->CR1 |= (USART_CR1_RE); // Enable the receiver
-
-    // USART2 GPIOA pins
-    alternateFunctionMode(GPIOA, GPIO_PA2, 7);
-    alternateFunctionMode(GPIOA, GPIO_PA3, 7);
-
-    NVIC_EnableIRQ(USART2_IRQn);
-}
-
-void configureGPIOs() {
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
-
-    alternateFunctionMode(GPIOB, GPIO_PB6, 2); // VEC_CLK (white wire) alt func VEC_CLK_CH1
-
-    alternateFunctionMode(GPIOA, GPIO_PA0, 2); // GOb (green wire) alt func VEC_TIMER_CH1
-
-    pinMode(GPIOA, GPIO_PA4, GPIO_OUTPUT); // COUNT_LDb (blue wire)
-    pinMode(GPIOA, GPIO_PA8, GPIO_OUTPUT); // COLOR_LD (yellow wire)
-    pinMode(GPIOB, GPIO_PB4, GPIO_OUTPUT); // BLANKb (dark green wire)
-
-    alternateFunctionMode(GPIOA, GPIO_PA5, 5);  // X_SHIFT_REG_CLK  (orange wire) alt func SPI1_SCK
-    pinMode(GPIOA, GPIO_PA6, GPIO_OUTPUT);      // X_SHIFT_REG_LD   (red wire)
-    alternateFunctionMode(GPIOA, GPIO_PA7, 5);  // X_SHIFT_REG_DATA (brown wire)  alt func SPI1_MOSI
-
-    alternateFunctionMode(GPIOC, GPIO_PC10, 6); // Y_SHIFT_REG_CLK  (orange wire) alt func SPI3_SCK
-    pinMode(GPIOC, GPIO_PC11, GPIO_OUTPUT);     // Y_SHIFT_REG_LD   (red wire)
-    alternateFunctionMode(GPIOC, GPIO_PC12, 6); // Y_SHIFT_REG_DATA (brown wire)  alt func SPI3_MOSI
-
-    pinMode(LED_GPIO, LED_PIN, GPIO_OUTPUT); // external debugging LED
-}
-
-void configureBRM() {
-    /* Configure BRM */
-
-    // Enable clock to timers
-    RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
-    RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-
-    // Configure VEC_CLK Timer for outputting 1.5MHz clock
-    configureCaptureCompare(VEC_MASTER_CLK);
-    configurePWM(VEC_MASTER_CLK, 1);
-    generatePWMfreq(VEC_MASTER_CLK, 10000000U, 2U);
-
-    // Configure VEC_TIMER Timer for controlling GO signal based on VEC_CLK
-    configureCaptureCompare(VEC_TIMER);
-    configureDuration(VEC_TIMER, 0, 1, 0b010);
-    VEC_TIMER->DIER |= TIM_DIER_UIE; // enable interrupt req upon updating
-    NVIC_EnableIRQ(TIM5_IRQn);
 }
 
 void configureDMA() {
     // Using DMA 2 Stream 0 for memory-to-memory transfer
-    // Note that in memory-to-memory, the peripheral stuff is the source and the memory stuff is the dest
-
+    //   Note that in memory-to-memory mode,
+    //   the "peripheral" address and controls are for the source
+    //   and the "memory" address and controls are for the destionation
+    // Enable clock
     RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-
     // Disable stream
     DMA2_Stream0->CR &= ~DMA_SxCR_EN;
     while (DMA2_Stream0->CR & DMA_SxCR_EN_Msk); // wait until stream is off
-
-    // Reset configuration values
+    // Reset all configuration bits
     // - Select channel 0 (channel does not matter for memory-to-memory)
     // - Single transfer mode
     // - Disable double buffer mode
@@ -343,32 +341,55 @@ void configureDMA() {
     // - Disable DMA interrupts - some will be enabled later
     // - Disable the stream (should already be disabled)
     DMA2_Stream0->CR = 0;
-
+    // Enable the configuration bits we need
     DMA2_Stream0->CR |= (0b10 << DMA_SxCR_PL_Pos);    // high priority (3/4)
     DMA2_Stream0->CR |= (0b01 << DMA_SxCR_MSIZE_Pos); // 16-bit memory data size
     DMA2_Stream0->CR |= (0b01 << DMA_SxCR_PSIZE_Pos); // 16-bit peripheral data size (is this even needed?)
     DMA2_Stream0->CR |= (0b10 << DMA_SxCR_DIR_Pos);   // memory-to-memory mode
     DMA2_Stream0->CR |= DMA_SxCR_MINC;                // enable memory increment mode
     DMA2_Stream0->CR |= DMA_SxCR_PINC;                // enable peripheral increment mode
+    // We'll re-enable the stream when we are ready to send something
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Helper Functions
+///////////////////////////////////////////////////////////////////////////////
+
+void USART2_IRQHandler() {
+    // For receiving user control data from a computer
+    if (USART2->SR | USART_SR_RXNE) {
+        uint16_t message = USART2->DR;
+        lastCommand = message;
+        newCommandAvailable = 1;
+    }
 }
 
 void runDMA(uint16_t * source, uint16_t * destination, unsigned int numberOfDatas) {
     // Disable stream
     DMA2_Stream0->CR &= ~DMA_SxCR_EN;
     while (DMA2_Stream0->CR & DMA_SxCR_EN_Msk); // wait until stream is off
-
     // Clear Status Registers
-    DMA2->LIFCR |= (DMA_LIFCR_CTCIF0 | DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTEIF0 | DMA_LIFCR_CDMEIF0 | DMA_LIFCR_CFEIF0);
-
+    DMA2->LIFCR |= (DMA_LIFCR_CTCIF0 | DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTEIF0 | 
+                    DMA_LIFCR_CDMEIF0 | DMA_LIFCR_CFEIF0);
     // Configure source and destination
     DMA2_Stream0->PAR  = (uint32_t) source;
     DMA2_Stream0->M0AR = (uint32_t) destination;
-
     // Data transfer length
     DMA2_Stream0->NDTR = (uint32_t) numberOfDatas;
-
     // Enable stream
     DMA2_Stream0->CR |= DMA_SxCR_EN;
+}
+
+void swapBuffers() {
+    if (buff_r==&buff_0_value) {
+        buff_r = &buff_1_value;
+        buff_w = &buff_0_value;
+    } else {
+        buff_r = &buff_0_value;
+        buff_w = &buff_1_value;
+    }
+    buff_r->read_index=0;
+    buff_w->top=buff_w->anim_index; // we consider anything that needs to be animated as unwritten to begin with
 }
 
 void addVectorsToBuffer(uint16_t* x_data, uint16_t* y_data, uint16_t* z_data, unsigned int length) {
@@ -399,19 +420,6 @@ void addLoadToBuffer(uint16_t x_pos, uint16_t y_pos, unsigned int red, unsigned 
     buff_w->top++;
 }
 
-void beginDrawing() {
-    // load in initial vector to get things started
-    // it would be wise for this first vector to load a starting position and color
-    X_SPI->DR = buff_r->x[buff_r->read_index];
-    Y_SPI->DR = buff_r->y[buff_r->read_index];
-
-    // now generate an update to start the interrupt cycle
-    VEC_TIMER->DIER |= TIM_DIER_UIE;
-    // since we aren't drawing a vector yet, we need to manually ensure the data have time to be loaded in,
-    // and set CCR1 so that GOb never activates
-    generateDuration(VEC_TIMER, 100, 100);
-}
-
 void fetchNextVector() {
     // Fetch next vector
     curr_x = buff_r->x[buff_r->read_index];
@@ -424,45 +432,53 @@ void fetchNextVector() {
     }
 }
 
+void beginDrawing() {
+    // load in initial vector to get things started
+    // this first vector should probably load a starting position and color
+    X_SPI->DR = buff_r->x[buff_r->read_index];
+    Y_SPI->DR = buff_r->y[buff_r->read_index];
+    // now generate an update to start the interrupt cycle
+    VEC_TIMER->DIER |= TIM_DIER_UIE;
+    // Since we aren't drawing a vector yet, we need to manually ensure the data have time to be loaded in,
+    // and the beam has time to settle.
+    // Note that the compare value CCR1 is as high as the auto-reload value, so the output GOb never activates
+    // and draws a vector accidentally.
+    // 
+    generateDuration(VEC_TIMER, 100, 100);
+}
+
 // This is the main function for handling drawing stuff
 void TIM5_IRQHandler() {
-    // Clear interrupt flag.
+    // Clear interrupt flag
     VEC_TIMER->SR &= ~(TIM_SR_UIF);
-    // If we're waiting on the comput-er to finish the next frame, hold tight and wait
-    if (buffer_swap_req) return;
-    // Output the previous vector's data by strobing shift reg latch.
+    // If we're waiting on the comput-er (main loop) to finish the next frame, stop drawing
+    if (buffer_swap_req) {
+        drawer_halted=1; // lets comput-er know it needs to restart draw-er
+        return; // stop drawing
+    }
+    // Output the previous vector's data by strobing shift reg latch
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_HIGH);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_HIGH);
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_LOW);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
-    // Apply control signals for previous vector.
-    //   By default, let's always apply color.
-    digitalWrite(GPIOA, COLOR_LD, GPIO_HIGH);
-    digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
-    //   Strobe counter parallel load if we need to (moves beam to absolute position)
+    // Strobe color latch if we need to
+    if (curr_z&LD_COL) {
+        digitalWrite(GPIOA, COLOR_LD, GPIO_HIGH);
+        digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
+    }
+    // Strobe counter parallel load if we need to 
+    // This moves the beam to absolute position (X,Y)
     if (curr_z & LD_POS) {
-        // Blank colors no matter what
-        blanked=1;
+        // Blank colors for absolute loads
         digitalWrite(GPIOB, BLANKb,GPIO_LOW);
         // Strobe the counter parallel load
         digitalWrite(GPIOA, COUNT_LDb, GPIO_LOW);
         digitalWrite(GPIOA, COUNT_LDb, GPIO_HIGH);
+        // Grab the next vector
         fetchNextVector();
-        // Add color (for next vector)
-        curr_x |= x_color<<12;
-        curr_y |= y_color<<12;
-        // Send out next vector
-        X_SPI->DR = curr_x;
-        Y_SPI->DR = curr_y;
-        // Wait until it's done sending
-        while(!(Y_SPI->SR & SPI_SR_TXE));
-        // And wait some more for the beam to finish moving
-        // Lest we turn on the electron beam in the middle of jumping
-        delay_micros(DELAY_TIM, 100);
-        // Let's go through this again
-        TIM5_IRQHandler();
-        // Sure an SPI interrupt might save some time, but we can get away with this simplicity
-        // because absolute position loads are pretty infrequent.
+        // Give some time for the beam to settle
+        // but set compare value CCR1 so that GOb never activates and accidentally draws a vector
+        generateDuration(VEC_TIMER, 1028, 1028);
     } else {
         // Blank colors if we need to
         if (curr_z&BLANK) {
@@ -470,35 +486,22 @@ void TIM5_IRQHandler() {
         } else {
             digitalWrite(GPIOB,BLANKb,GPIO_HIGH);
         }
-        // Run BRM's to draw a line
-        generateDuration(VEC_TIMER, 1028, 5);
-        // yes we are counting on the rest of this function to run before this duration times up
+        // Grab the next vector
         fetchNextVector();
+        // Activate GOb for 1024 pulses
+        // This runs the BRM's and Up/Down counters so that they draw out a line
+        // The compare functionality needs a few cycles to get ready after the timer is enabled,
+        // hence the offset by 5 ticks.
+        generateDuration(VEC_TIMER, 1028, 5);
     }
-    // Now let's manually and sequentially process sending the next vector.
-    // Yeah sure there might be some more optimizations if you do this a-sequentially,
-    // (so that you can process stuff while running an SPI transfer),
-    // but I found that very hard to debug because you're juggling the next vector and the current vector all at once.
-    // The STM's pretty fast so I think we can trade in some multitasking for reliability.
-
-    // If says it has color, let's note down that color
-    if (curr_z&LD_COL) {
-        x_color = curr_x>>12;
-        y_color = curr_y>>12;
-    }
-    // By default, let's always add color unless we're blanking the vector
-    if (!(curr_z&BLANK)) {
-        curr_x |= x_color<<12;
-        curr_y |= y_color<<12;
-    }
-    // Now we can start start sending out the data for the next vector.
+    // Send out the next vector over SPI
     X_SPI->DR = curr_x;
     Y_SPI->DR = curr_y;
+    // Note that we are expecting the SPI to finish sending before 1028 pulses of VEC_CLK
+    // This is reasonable; it takes time to draw
 }
 
-void WWDG_IRQHandler(){}
-
-void staticImages() {
+void helloGamerText() {
     addLoadToBuffer(260, 800, 0b000, 0b100, 0b10);
     addVectorsToBuffer(h_x,h_y,h_z,6);
     addVectorsToBuffer(e_x,e_y,e_z,7);
@@ -514,48 +517,76 @@ void staticImages() {
     addVectorsToBuffer(s_x,s_y,s_z,6);
     buff_w->anim_index=buff_w->top;
 }
+
+void vectorDisplayText() {
+    addLoadToBuffer(260, 800, 0b000, 0b100, 0b10);
+    addVectorsToBuffer(v_x,v_y,v_z,4);
+    addVectorsToBuffer(e_x,e_y,e_z,7);
+    addVectorsToBuffer(c_x,c_y,c_z,5);
+    addVectorsToBuffer(t_x,t_y,t_z,5);
+    addVectorsToBuffer(o_x,o_y,o_z,5);
+    addVectorsToBuffer(r_x,r_y,r_z,7);
+    addLoadToBuffer(185, 150, 0b010, 0b000, 0b10);
+    addVectorsToBuffer(d_x,d_y,d_z,7);
+    addVectorsToBuffer(i_x,i_y,i_z,6);
+    addVectorsToBuffer(s_x,s_y,s_z,6);
+    addVectorsToBuffer(p_x,p_y,p_z,5);
+    addVectorsToBuffer(l_x,l_y,l_z,4);
+    addVectorsToBuffer(a_x,a_y,a_z,7);
+    addVectorsToBuffer(y_x,y_y,y_z,7);
+    buff_w->anim_index=buff_w->top;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Main
+///////////////////////////////////////////////////////////////////////////////
+
 int main(void) {
+    /* Configure All Peripherals */
+    // peripheral configurations from other libraries
     configure84MHzClock();
-
-    configureUSART2();
-    configureDelayTimer();
-    configureBRM();
-
     RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
     configureSPI(SPI1);
     RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
     configureSPI(SPI3);
-
+    __enable_irq();
+    // peripheral configurations defined here in main
     configureGPIOs();
-
+    configureDelayTimer();
+    configureVectorTimers();
+    configureUSART2();
     configureDMA();
 
-    __enable_irq(); // Enable interrupts globally
-
-    staticImages();
+    /* Initialize Frame Buffers */
+    // store static images in first frame buffer
+    helloGamerText();
+    // store static images in second frame buffer
     swapBuffers();
-    // and regenerate images for second buffer
-    staticImages();
+    helloGamerText();
 
-    // drives GOb high when it is done so that we aren't drawing anything
-    VEC_TIMER->DIER &= ~(TIM_DIER_UIE); // we don't want to jump into an interrupt until we are at the starting position
+    /* Initialize Vector Generator */
+    // drives GOb high when it is done
+    // so that we aren't drawing anything when we perform the initial load
+    VEC_TIMER->DIER &= ~(TIM_DIER_UIE); // we don't want to jump into the interrupt cycle just yet
     generateDuration(VEC_TIMER, 1, 2);
+    // now we are ready to start drawing
     beginDrawing();
 
-    // initial calculation
+    /* Initialize 3D Calculations */
     rotateZCube(LEFT_CUBE, 45);
     rotateZCube(RIGHT_CUBE,45);
     rotateYCube(LEFT_CUBE, 45);
     rotateYCube(RIGHT_CUBE,45);
     calculateCubeVectorData(cubeVectorData);
 
-    // default to on to show signs of life
-    digitalWrite(GPIOA, LED_PIN, 1);
+    /* Initialize Debugging LED */ 
+    digitalWrite(GPIOA, LED_PIN, 1); // Turn on by default to shows signs of life
 
+    /* Main Loop */
     while (1) {
+        // Respond to Keyboard Input
         if (newCommandAvailable) {
             newCommandAvailable = 0;
-
             switch (lastCommand) {
                 case ((uint16_t)'w'):
                     rotateYCube(LEFT_CUBE,  1);
@@ -602,17 +633,22 @@ int main(void) {
             }
             calculateCubeVectorData(cubeVectorData);
         }
+        // Add animated images to frame buffer
         buff_w->top=buff_w->anim_index;
-        addLoadToBuffer(512, 512, 0b010, 0b100, 0b00);
+        addLoadToBuffer(512, 512, 0b010, 0b100, 0b00); // recenter and color yellow
         addVectorsToBuffer(cubeVectorData[0],cubeVectorData[1],cubeZData,19);
-        addLoadToBuffer(512, 512, 0b011, 0b011, 0b00);
+        addLoadToBuffer(512, 512, 0b011, 0b011, 0b00); // recenter and color orange
         addVectorsToBuffer(&cubeVectorData[0][19],&cubeVectorData[1][19],cubeZData,19);
-        // if draw-er has requested the next buffer,
-        // the comput-er can now oblige that request
+        // if draw-er (TIM5_IRQHandler) has requested the next buffer,
+        // the comput-er (this main loop right here) can now oblige that request
         if (buffer_swap_req) {
-            buffer_swap_req=0;
+            buffer_swap_req=0; // lower flag
             swapBuffers();
-            beginDrawing();
+            // restart draw-er if it was stopped
+            if (drawer_halted) {
+                drawer_halted=0; // lower flag
+                beginDrawing();
+            }
         }
     }
     return 0;
