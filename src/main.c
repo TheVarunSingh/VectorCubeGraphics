@@ -177,10 +177,10 @@ uint16_t z_z[5] = {BLANK,0,0,0,BLANK};
 const unsigned int CUBE_VECTOR_DATA_SIZE = 76; // words
 #define ARRAY_SIZE 38
 uint16_t cubeVectorData[2][ARRAY_SIZE];
-uint16_t cubeZData[38] = {0,0,0,0,0,0,0,0,0,0,
+uint16_t cubeZData[38] = {BLANK,BLANK,0,0,0,0,0,0,0,0,
                           0,0,0,0,0,0,0,0,0,0,
                           0,0,0,0,0,0,0,0,0,0,
-                          0,0,0,0,0,0,0,0};
+                          BLANK,0,BLANK,0,BLANK,0,BLANK,BLANK};
 
 // Keyboard Input Vars
 volatile int newCommandAvailable = 0;
@@ -284,7 +284,7 @@ void configureGPIOs() {
 
     alternateFunctionMode(GPIOA, GPIO_PA0, 2); // GOb (green wire) alt func VEC_TIMER_CH1
 
-    pinMode(GPIOA, GPIO_PA4, GPIO_OUTPUT); // COUNT_LD (blue wire)
+    pinMode(GPIOA, GPIO_PA4, GPIO_OUTPUT); // COUNT_LDb (blue wire)
     pinMode(GPIOA, GPIO_PA8, GPIO_OUTPUT); // COLOR_LD (yellow wire)
 
     alternateFunctionMode(GPIOA, GPIO_PA5, 5);  // X_SHIFT_REG_CLK  (orange wire) alt func SPI1_SCK
@@ -397,9 +397,6 @@ void addLoadToBuffer(uint16_t x_pos, uint16_t y_pos, unsigned int red, unsigned 
 }
 
 void beginDrawing() {
-    // drives GOb high when it is done so that we aren't drawing anything
-    VEC_TIMER->DIER &= ~(TIM_DIER_UIE); // we don't want to jump into an interrupt until we are at the starting position
-    generateDuration(VEC_TIMER, 1, 2);
     // load in initial vector to get things started
     // it would be wise for this first vector to load a starting position and color
     X_SPI->DR = buff_r->x[buff_r->read_index];
@@ -409,7 +406,7 @@ void beginDrawing() {
     VEC_TIMER->DIER |= TIM_DIER_UIE;
     // since we aren't drawing a vector yet, we need to manually ensure the data have time to be loaded in,
     // and set CCR1 so that GOb never activates
-    generateDuration(VEC_TIMER, 50, 50);
+    generateDuration(VEC_TIMER, 300, 300);
 }
 
 void fetchNextVector() {
@@ -443,8 +440,8 @@ void TIM5_IRQHandler() {
     //   Strobe counter parallel load if we need to (moves beam to absolute position)
     if (curr_z & LD_POS) {
         // If so, strobe the counter parallel load.
-        digitalWrite(GPIOA, COUNT_LD, GPIO_LOW);
-        digitalWrite(GPIOA, COUNT_LD, GPIO_HIGH);
+        digitalWrite(GPIOA, COUNT_LDb, GPIO_LOW);
+        digitalWrite(GPIOA, COUNT_LDb, GPIO_HIGH);
         fetchNextVector();
         // By default, let's always add color unless we're blanking the vector
         if (!(curr_z&BLANK)) {
@@ -458,7 +455,7 @@ void TIM5_IRQHandler() {
         while(!(Y_SPI->SR & SPI_SR_TXE));
         // And wait some more for the beam to finish moving
         // Lest we turn on the electron beam in the middle of jumping
-        delay_micros(DELAY_TIM, 300);
+        delay_micros(DELAY_TIM, 70);
         // Let's go through this again
         TIM5_IRQHandler();
         // Sure an SPI interrupt might save some time, but we can get away with this simplicity
@@ -493,20 +490,19 @@ void TIM5_IRQHandler() {
 void WWDG_IRQHandler(){}
 
 void staticImages() {
-    addLoadToBuffer(260, 902, 0b000, 0b100, 0b00);
+    addLoadToBuffer(260, 800, 0b000, 0b010, 0b10);
     addVectorsToBuffer(h_x,h_y,h_z,6);
     addVectorsToBuffer(e_x,e_y,e_z,7);
     addVectorsToBuffer(l_x,l_y,l_z,4);
     addVectorsToBuffer(l_x,l_y,l_z,4);
     addVectorsToBuffer(o_x,o_y,o_z,5);
-    addLoadToBuffer(185, 50, 0b011, 0b000, 0b00);
+    addLoadToBuffer(185, 150, 0b010, 0b000, 0b10);
     addVectorsToBuffer(g_x,g_y,g_z,8);
     addVectorsToBuffer(a_x,a_y,a_z,7);
     addVectorsToBuffer(m_x,m_y,m_z,5);
     addVectorsToBuffer(e_x,e_y,e_z,7);
     addVectorsToBuffer(r_x,r_y,r_z,7);
     addVectorsToBuffer(s_x,s_y,s_z,6);
-    addLoadToBuffer(512, 342, 0b011, 0b011, 0b0);
     buff_w->anim_index=buff_w->top;
 }
 int main(void) {
@@ -532,11 +528,14 @@ int main(void) {
     // and regenerate images for second buffer
     staticImages();
 
+    // drives GOb high when it is done so that we aren't drawing anything
+    VEC_TIMER->DIER &= ~(TIM_DIER_UIE); // we don't want to jump into an interrupt until we are at the starting position
+    generateDuration(VEC_TIMER, 1, 2);
     beginDrawing();
 
     // initial calculation
-    rotateYCube(LEFT_CUBE,  45);
-    rotateZCube(RIGHT_CUBE, 45);
+    rotateYCube(LEFT_CUBE,  15);
+    rotateZCube(RIGHT_CUBE, 75);
     calculateCubeVectorData(cubeVectorData);
 
     // default to on to show signs of life
@@ -593,7 +592,10 @@ int main(void) {
             calculateCubeVectorData(cubeVectorData);
         }
         buff_w->top=buff_w->anim_index;
-        addVectorsToBuffer(cubeVectorData[0],cubeVectorData[1],cubeZData,38);
+        addLoadToBuffer(512, 450, 0b010, 0b010, 0b00);
+        addVectorsToBuffer(cubeVectorData[0],cubeVectorData[1],cubeZData,19);
+        addLoadToBuffer(512, 450, 0b000, 0b000, 0b11);
+        addVectorsToBuffer(&cubeVectorData[0][19],&cubeVectorData[1][19],cubeZData,19);
         // if draw-er has requested the next buffer,
         // the comput-er can now oblige that request
         if (buffer_swap_req) {

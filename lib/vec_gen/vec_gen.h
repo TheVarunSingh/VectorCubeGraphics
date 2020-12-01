@@ -7,10 +7,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Port Definitions
+//   Note: suffix of "b" stands for "bar", i.e. an active-low signal
 ///////////////////////////////////////////////////////////////////////////////
 #define VEC_CLK           GPIO_PB6  // white wire  (port B)
 #define GOb               GPIO_PA0  // green wire  (port A)
-#define COUNT_LD          GPIO_PA4  // blue wire   (port A)
+#define COUNT_LDb         GPIO_PA4  // blue wire   (port A)
 #define COLOR_LD          GPIO_PA8  // yellow wire (port A)
 #define X_SHIFT_REG_CLK   GPIO_PA5  // orange wire (port A)
 #define X_SHIFT_REG_LD    GPIO_PA6  // red wire    (port A)

@@ -19,9 +19,9 @@ void loadCounter(uint16_t x_value, uint16_t y_value) {
     digitalWrite(GPIOA, X_SHIFT_REG_LD, GPIO_LOW);
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
     // strobe counter load
-    digitalWrite(GPIOA, COUNT_LD, GPIO_HIGH);
-    digitalWrite(GPIOA, COUNT_LD, GPIO_LOW);
-    digitalWrite(GPIOA, COUNT_LD, GPIO_HIGH);
+    digitalWrite(GPIOA, COUNT_LDb, GPIO_HIGH);
+    digitalWrite(GPIOA, COUNT_LDb, GPIO_LOW);
+    digitalWrite(GPIOA, COUNT_LDb, GPIO_HIGH);
 }
 
 void loadColor(uint16_t x_value, uint16_t y_value, unsigned int red, unsigned int green, unsigned int blue) {
@@ -39,9 +39,9 @@ void loadColor(uint16_t x_value, uint16_t y_value, unsigned int red, unsigned in
     digitalWrite(GPIOC, Y_SHIFT_REG_LD, GPIO_LOW);
 
     // strobe counter load and color load
-    digitalWrite(GPIOA, COUNT_LD, GPIO_HIGH);
+    digitalWrite(GPIOA, COUNT_LDb, GPIO_HIGH);
     digitalWrite(GPIOA, COLOR_LD, GPIO_HIGH);
-    digitalWrite(GPIOA, COUNT_LD, GPIO_LOW);
+    digitalWrite(GPIOA, COUNT_LDb, GPIO_LOW);
     digitalWrite(GPIOA, COLOR_LD, GPIO_LOW);
-    digitalWrite(GPIOA, COUNT_LD, GPIO_HIGH);
+    digitalWrite(GPIOA, COUNT_LDb, GPIO_HIGH);
 }
