@@ -18,10 +18,10 @@ void multiply4x4byVector(float A[4][4], float b[4]) {
 
 void translate(float vector[4], float tx, float ty, float tz) {
     float translationMatrix[4][4] = {
-        { 1,  0,  0,  0},
-        { 0,  1,  0,  0},
-        { 0,  0,  1,  0},
-        {tx, ty, tz,  1}
+        { 1,  0,  0,  tx},
+        { 0,  1,  0,  ty},
+        { 0,  0,  1,  tz},
+        { 0,  0,  0,  1}
     };
     multiply4x4byVector(translationMatrix, vector);
 }
