@@ -409,7 +409,7 @@ void beginDrawing() {
     VEC_TIMER->DIER |= TIM_DIER_UIE;
     // since we aren't drawing a vector yet, we need to manually ensure the data have time to be loaded in,
     // and set CCR1 so that GOb never activates
-    generateDuration(VEC_TIMER, 600, 600);
+    generateDuration(VEC_TIMER, 300, 300);
 }
 
 void fetchNextVector() {
@@ -603,9 +603,9 @@ int main(void) {
             calculateCubeVectorData(cubeVectorData);
         }
         buff_w->top=buff_w->anim_index;
-        addLoadToBuffer(512, 450, 0b010, 0b100, 0b00);
+        addLoadToBuffer(512, 512, 0b010, 0b100, 0b00);
         addVectorsToBuffer(cubeVectorData[0],cubeVectorData[1],cubeZData,19);
-        addLoadToBuffer(512, 450, 0b011, 0b011, 0b00);
+        addLoadToBuffer(512, 512, 0b011, 0b011, 0b00);
         addVectorsToBuffer(&cubeVectorData[0][19],&cubeVectorData[1][19],cubeZData,19);
         // if draw-er has requested the next buffer,
         // the comput-er can now oblige that request
