@@ -49,6 +49,7 @@ void rotateYCube(int cube, int deg) {
 }
 
 void rotateZCube(int cube, int deg) {
+    translateCube(cube, 0, 2-(4*cube), 0);
     if (cube == LEFT_CUBE) {
         for (int i = 0; i < 8; ++i) {
             rotateZ(leftCubeVertices[i], deg);
@@ -58,6 +59,7 @@ void rotateZCube(int cube, int deg) {
             rotateZ(rightCubeVertices[i], deg);
         }
     }
+    translateCube(cube, 0, (4*cube)-2, 0);
 }
 
 void subtractCubeVertices(int cube, int idx1, int idx2, float result[4]) {
