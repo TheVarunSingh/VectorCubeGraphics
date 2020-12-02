@@ -1,6 +1,11 @@
 #include "cubetransformations.h"
 
+/**
+ * Transformations to the cube are performed by transforming each vertex of the cube.
+ */
+
 void translateCube(int cube, float tx, float ty, float tz) {
+    // Translate a cube by tx in the x direction, ty in the y direction, and tz in the z direction
     if (cube == LEFT_CUBE) {
         for (int i = 0; i < 8; ++i) {
             translate(leftCubeVertices[i], tx, ty, tz);
@@ -13,6 +18,7 @@ void translateCube(int cube, float tx, float ty, float tz) {
 }
 
 void scaleCube(int cube, float sx, float sy, float sz) {
+    // Scales a cube by tx in the x direction, ty in the y direction, and tz in the z direction
     if (cube == LEFT_CUBE) {
         for (int i = 0; i < 8; ++i) {
             scale(leftCubeVertices[i], sx, sy, sz);
@@ -25,6 +31,7 @@ void scaleCube(int cube, float sx, float sy, float sz) {
 }
 
 void rotateXCube(int cube, int deg) {
+    // Rotates a cube about the x axis
     if (cube == LEFT_CUBE) {
         for (int i = 0; i < 8; ++i) {
             rotateX(leftCubeVertices[i], deg);
@@ -37,6 +44,7 @@ void rotateXCube(int cube, int deg) {
 }
 
 void rotateYCube(int cube, int deg) {
+    // Rotates a cube about the y axis
     if (cube == LEFT_CUBE) {
         for (int i = 0; i < 8; ++i) {
             rotateY(leftCubeVertices[i], deg);
@@ -49,6 +57,7 @@ void rotateYCube(int cube, int deg) {
 }
 
 void rotateZCube(int cube, int deg) {
+    // Rotates the left cube about the x=0,y=-2 axis and the right cube about the x=0,y=2 axis
     translateCube(cube, 0, 2-(4*cube), 0);
     if (cube == LEFT_CUBE) {
         for (int i = 0; i < 8; ++i) {
@@ -63,6 +72,7 @@ void rotateZCube(int cube, int deg) {
 }
 
 void subtractCubeVertices(int cube, int idx1, int idx2, float result[4]) {
+    // Homogenous coordinate subtraction in order to get the vector between two poitns
     if (cube == LEFT_CUBE) {
         float weight1 = idx1 < 0 ? origin[3] : leftCubeVertices[idx1][3];
         float weight2 = idx2 < 0 ? origin[3] : leftCubeVertices[idx2][3];
@@ -85,6 +95,9 @@ void subtractCubeVertices(int cube, int idx1, int idx2, float result[4]) {
 }
 
 void calculateCubeEdges() {
+    // Calculate the edges of the cube by taking the difference between consecutive vertices
+    // Start and end at the origin
+
     subtractCubeVertices(LEFT_CUBE,          -1,                    -1,             cubeEdges[0]);
     subtractCubeVertices(LEFT_CUBE,  FRONT_RIGHT_UP_IDX,            -1,             cubeEdges[1]);
     subtractCubeVertices(LEFT_CUBE,  BACK_RIGHT_UP_IDX,     FRONT_RIGHT_UP_IDX,     cubeEdges[2]);
@@ -127,6 +140,7 @@ void calculateCubeEdges() {
 }
 
 void calculateCubeVectorDataFloats() {
+    // Calculate the edge values while still using floats
     calculateCubeEdges();
     for (int i = 0; i < 38; ++i) {
         projectOrthogonally(cubeEdges[i], cubeVectorDataFloats[i]);
@@ -135,6 +149,7 @@ void calculateCubeVectorDataFloats() {
 
 #define NEG (1<<10)
 void calculateCubeVectorData(uint16_t vectorData[2][38]) {
+    // Calculate the screen coordinate values (-512 to 512) for the edgees
     calculateCubeVectorDataFloats();
     for (int i = 0; i < 38; ++i) {
         for (int j = 0; j < 2; ++j) {
